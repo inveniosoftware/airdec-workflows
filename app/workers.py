@@ -1,3 +1,4 @@
+import os
 import asyncio
 
 from temporalio.client import Client
@@ -8,10 +9,12 @@ from pydantic_ai.durable_exec.temporal import PydanticAIPlugin
 from app.workflows.extract_metadata_workflow import ExtractMetadata
 from app.activities import extract_pdf_content
 
+TEMPORAL_HOST = os.getenv("TEMPORAL_HOST", "localhost:7233")
+
 
 async def main():
     client = await Client.connect(
-        "localhost:7233",
+        TEMPORAL_HOST,
         plugins=[PydanticAIPlugin()],
     )
 

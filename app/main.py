@@ -6,7 +6,6 @@ from temporalio.client import Client
 
 from .database.session import init_engine, dispose_engine
 from .dependencies import get_token_header
-from .internal import admin
 from .routers import workflows
 
 TEMPORAL_HOST = os.getenv("TEMPORAL_HOST", "localhost:7233")
