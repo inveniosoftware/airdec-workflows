@@ -29,3 +29,29 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.9.0",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "D",    # pydocstyle
+]
+ignore = [
+    "D100",  # missing docstring in public module
+    "D104",  # missing docstring in public package
+    "D106",  # missing docstring in public nested class
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

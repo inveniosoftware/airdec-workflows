@@ -2,13 +2,10 @@ from datetime import timedelta
 from typing import Optional
 
 from pydantic import BaseModel, Field
-from temporalio import workflow
-
-from pydantic_ai import Agent
 from pydantic_ai.durable_exec.temporal import (
     PydanticAIWorkflow,
-    TemporalAgent,
 )
+from temporalio import workflow
 
 from app.activities import extract_pdf_content
 

@@ -1,9 +1,8 @@
 import os
 from collections.abc import Generator
 
-from sqlmodel import Session, create_engine
 from sqlalchemy import Engine
-
+from sqlmodel import Session, create_engine
 
 DRIVER = "psycopg"
 

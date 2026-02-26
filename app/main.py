@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI
 from temporalio.client import Client
 
-from .database.session import init_engine, dispose_engine
+from .database.session import dispose_engine, init_engine
 from .dependencies import get_token_header
 from .routers import workflows
 
