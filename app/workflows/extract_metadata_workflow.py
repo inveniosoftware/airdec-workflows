@@ -1,5 +1,4 @@
 from datetime import timedelta
-from typing import Optional
 
 from pydantic import BaseModel, Field
 from pydantic_ai.durable_exec.temporal import (
@@ -11,25 +10,25 @@ from app.activities import extract_pdf_content
 
 
 class DocumentMetadata(BaseModel):
-    title: Optional[str] = Field(default=None, description="The title of the document")
-    authors: Optional[list[str]] = Field(
+    title: str | None = Field(default=None, description="The title of the document")
+    authors: list[str] | None = Field(
         default=None, description="List of document authors"
     )
-    publication_date: Optional[str] = Field(
+    publication_date: str | None = Field(
         default=None,
         description="Publication date in ISO format (YYYY-MM-DD, YYYY-MM, or YYYY)",
     )
-    abstract: Optional[str] = Field(
+    abstract: str | None = Field(
         default=None,
         description="Abstract or summary of the document, extracted verbatim",
     )
-    language: Optional[str] = Field(
+    language: str | None = Field(
         default=None, description="Language of the document (e.g. 'en', 'fr')"
     )
-    keywords: Optional[list[str]] = Field(
+    keywords: list[str] | None = Field(
         default=None, description="Key topics or keywords from the document"
     )
-    num_pages: Optional[int] = Field(
+    num_pages: int | None = Field(
         default=None, description="Number of pages in the document"
     )
 
