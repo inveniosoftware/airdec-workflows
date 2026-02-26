@@ -6,7 +6,7 @@ Backend service for AIRDEC AI extraction, built with **FastAPI**, **Temporal**, 
 
 - [Docker & Docker Compose](https://docs.docker.com/get-docker/)
 - [uv](https://docs.astral.sh/uv/) (Python package manager)
-- Python ≥ 3.12
+- Python ≥ 3.14
 
 ## Local Setup
 
