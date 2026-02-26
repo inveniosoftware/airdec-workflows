@@ -1,13 +1,12 @@
-import os
 import asyncio
+import os
 
+from pydantic_ai.durable_exec.temporal import PydanticAIPlugin
 from temporalio.client import Client
 from temporalio.worker import Worker
 
-from pydantic_ai.durable_exec.temporal import PydanticAIPlugin
-
-from app.workflows.extract_metadata_workflow import ExtractMetadata
 from app.activities import extract_pdf_content
+from app.workflows.extract_metadata_workflow import ExtractMetadata
 
 TEMPORAL_HOST = os.getenv("TEMPORAL_HOST", "localhost:7233")
 

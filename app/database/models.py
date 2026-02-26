@@ -1,5 +1,6 @@
-from nanoid import generate
 from enum import Enum
+
+from nanoid import generate
 from sqlmodel import Field, SQLModel
 
 
