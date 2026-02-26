@@ -1,4 +1,4 @@
-# AIRDEC Workflows
+# AIRDEC Workflows [Temporary]
 
 Backend service for AIRDEC AI extraction, built with **FastAPI**, **Temporal**, and **PostgreSQL**.
 
