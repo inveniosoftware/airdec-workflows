@@ -1,13 +1,40 @@
-from typing import Annotated
+import jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from fastapi import Header, HTTPException
+from app.config import settings
 
+bearer_scheme = HTTPBearer()
 
-async def get_token_header(x_token: Annotated[str, Header()]):
-    if x_token != "fake-super-secret-token":
-        raise HTTPException(status_code=400, detail="X-Token header invalid")
+async def verify_jwt(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)
+) -> dict:
+    token = credentials.credentials
 
+    try:
+        payload = jwt.decode(
+            token,
+            settings.CLIENT_PUBLIC_KEY,
+            algorithms=[settings.JWT_ALGORITHM],
+            audience=settings.JWT_AUDIENCE
+        )
+    except jwt.ExpiredSignatureError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from e
+    except jwt.InvalidTokenError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid token: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from e
 
-async def get_query_token(token: str):
-    if token != "jessica":
-        raise HTTPException(status_code=400, detail="No Jessica token provided")
+    if payload.get("iss") != settings.JWT_ISSUER:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unknown token issuer"
+        )
+
+    return payload
