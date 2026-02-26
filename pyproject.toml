@@ -5,7 +5,7 @@ description = "backend for airdec ai extraction"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "click>=8.1.0",
+    "typer>=0.15.0",
     "fastapi-limiter>=0.2.0",
     "fastapi[standard]>=0.112.1",
     "httpx>=0.27.0",
@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [project.scripts]
-airdec = "app.cli.main:cli"
+airdec = "app.cli.main:app"
 
 [build-system]
 requires = ["hatchling"]

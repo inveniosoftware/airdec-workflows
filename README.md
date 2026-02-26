@@ -10,10 +10,16 @@ Backend service for AIRDEC AI extraction, built with **FastAPI**, **Temporal**, 
 
 ## Local Setup
 
-### 1. Start infrastructure (PostgreSQL + Temporal)
+### 1. Install dependencies
 
 ```bash
-docker compose up -d
+uv sync
+```
+
+### 2. Start infrastructure (PostgreSQL + Temporal)
+
+```bash
+uv run airdec services start
 ```
 
 This starts:
@@ -23,12 +29,6 @@ This starts:
 | PostgreSQL        | 5433  | Application database (`airdec`)|
 | Temporal Server   | 7233  | Workflow orchestration          |
 | Temporal UI       | 8080  | Web dashboard                   |
-
-### 2. Install dependencies
-
-```bash
-uv sync
-```
 
 ### 3. Create database tables
 
