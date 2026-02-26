@@ -30,10 +30,10 @@ This starts:
 uv sync
 ```
 
-### 3. Run database migrations
+### 3. Create database tables
 
 ```bash
-uv run alembic upgrade head
+uv run airdec init-db
 ```
 
 ### 4. Start the FastAPI server
@@ -59,9 +59,6 @@ docker compose down -v
 
 # View service logs
 docker compose logs -f
-
-# Create a new Alembic migration
-uv run alembic revision --autogenerate -m "description"
 
 # Open Temporal UI
 open http://localhost:8080
