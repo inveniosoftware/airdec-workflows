@@ -12,6 +12,7 @@ TEMPORAL_HOST = os.getenv("TEMPORAL_HOST", "localhost:7233")
 
 
 async def main():
+    """Start the Temporal worker."""
     client = await Client.connect(
         TEMPORAL_HOST,
         plugins=[PydanticAIPlugin()],

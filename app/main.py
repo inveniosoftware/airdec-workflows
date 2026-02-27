@@ -13,6 +13,7 @@ TEMPORAL_HOST = os.getenv("TEMPORAL_HOST", "localhost:7233")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Initialize and tear down application resources."""
     engine = init_engine()
     app.state.db_engine = engine
     app.state.temporal_client = await Client.connect(TEMPORAL_HOST)
@@ -31,4 +32,5 @@ app.include_router(
 
 @app.get("/")
 async def root():
+    """Health check endpoint."""
     return {"message": "This is the backend service for AIRDEC!"}
