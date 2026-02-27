@@ -23,6 +23,8 @@ STREAM_DELAY = 1
 
 
 class CreateWorkflowRequest(BaseModel):
+    """Request body for creating a new workflow."""
+
     url: str
 
 
@@ -37,6 +39,7 @@ def _get_temporal_client(request: Request) -> Client:
     ],
 )
 async def read_workflows(session: Session = Depends(get_session)):
+    """List all workflows."""
     workflows = session.exec(select(Workflow)).all()
     return [workflow.to_dict() for workflow in workflows]
 
@@ -50,6 +53,7 @@ async def create_workflow(
     request: Request,
     session: Session = Depends(get_session),
 ):
+    """Create a new workflow and start the Temporal extraction."""
     workflow = Workflow(status=WorkflowStatus.PROCESSING, url=body.url, user_id="123")
     try:
         session.add(workflow)
@@ -93,6 +97,7 @@ async def read_workflow(
     workflow_id: str,
     session: Session = Depends(get_session),
 ):
+    """Get a single workflow by its public ID."""
     try:
         workflow = session.exec(
             select(Workflow).where(Workflow.public_id == workflow_id)
@@ -104,6 +109,7 @@ async def read_workflow(
 
 
 async def workflow_event(request: Request, workflow_id: str):
+    """Generate SSE events for workflow status updates."""
     while True:
         if await request.is_disconnected():
             break
@@ -127,6 +133,7 @@ async def workflow_event(request: Request, workflow_id: str):
 
 @router.get("/{workflow_id}/stream")
 async def stream_workflow(request: Request, workflow_id: str):
+    """Stream workflow status updates via SSE."""
     return StreamingResponse(
         workflow_event(request, workflow_id), media_type="text/event-stream"
     )

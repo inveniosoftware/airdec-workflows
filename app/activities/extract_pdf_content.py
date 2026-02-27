@@ -7,10 +7,14 @@ from temporalio import activity
 
 
 class ExtractPdfContentRequest(BaseModel):
+    """Request to extract PDF content from a URL."""
+
     url: str
 
 
 class ExtractPdfContentResponse(BaseModel):
+    """Response containing extracted PDF text and page count."""
+
     text: str
     num_pages: int
 

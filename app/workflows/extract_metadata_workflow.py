@@ -10,6 +10,8 @@ from app.activities import extract_pdf_content
 
 
 class DocumentMetadata(BaseModel):
+    """Structured metadata extracted from a PDF document."""
+
     title: str | None = Field(default=None, description="The title of the document")
     authors: list[str] | None = Field(
         default=None, description="List of document authors"
@@ -38,7 +40,8 @@ You are an expert at extracting structured metadata from documents.
 
 Given the raw text content of a PDF document, extract the following metadata fields:
 - title: The main title of the document.
-- authors: A list of authors. Look for names near the title, in headers, or in an authors section.
+- authors: A list of authors. Look for names near the title,
+  in headers, or in an authors section.
 - publication_date: The publication date in ISO format (YYYY-MM-DD, YYYY-MM, or YYYY).
 - abstract: The abstract or summary, extracted verbatim from the document.
 - language: The language the document is written in (ISO 639-1 code, e.g. "en").
@@ -76,18 +79,19 @@ class ExtractMetadata(PydanticAIWorkflow):
 
     @workflow.run
     async def run(self, url: str) -> DocumentMetadata:
+        """Execute the metadata extraction workflow for the given PDF URL."""
         content = await workflow.execute_activity(
             extract_pdf_content.create,
             extract_pdf_content.ExtractPdfContentRequest(url=url),
             start_to_close_timeout=timedelta(minutes=5),
         )
 
-        prompt = (
-            f"The following is the text content extracted from a PDF document "
-            f"({content.num_pages} pages).\n\n"
-            f"---\n{content.text}\n---\n\n"
-            f"Please extract the structured metadata from this document."
-        )
+        # prompt = (
+        #     f"The following is the text content extracted from a PDF document "
+        #     f"({content.num_pages} pages).\n\n"
+        #     f"---\n{content.text}\n---\n\n"
+        #     f"Please extract the structured metadata from this document."
+        # )
 
         # result = await temporal_metadata_agent.run(prompt)
         # return result.output
