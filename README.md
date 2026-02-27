@@ -22,42 +22,41 @@ uv sync
 uv run airdec services start
 ```
 
-This starts:
-
-| Service           | Port  | Description                     |
-| ----------------- | ----- | ------------------------------- |
-| PostgreSQL        | 5433  | Application database (`airdec`)|
-| Temporal Server   | 7233  | Workflow orchestration          |
-| Temporal UI       | 8080  | Web dashboard                   |
-
 ### 3. Create database tables
 
 ```bash
 uv run airdec init-db
 ```
 
-### 4. Start the FastAPI server
+### 4. Start the application
 
 ```bash
-uv run fastapi dev app/main.py
+# Start both server and worker
+uv run airdec run
+
+# Or start them individually
+uv run airdec run server     # FastAPI dev server
+uv run airdec run workers    # Temporal worker
 ```
 
-### 5. Start the Temporal worker (separate terminal)
+## CLI Reference
 
-```bash
-uv run python -m app.workers
-```
+| Command                      | Description                              |
+| ---------------------------- | ---------------------------------------- |
+| `airdec services start`     | Start PostgreSQL + Temporal via Docker   |
+| `airdec services stop`      | Stop all Docker services                 |
+| `airdec init-db`            | Create database tables from models       |
+| `airdec run`                | Start both server and worker             |
+| `airdec run server`         | Start FastAPI dev server only            |
+| `airdec run workers`        | Start Temporal worker only               |
 
 ## Useful Commands
 
 ```bash
-# Stop all services
-docker compose down
-
 # Stop and remove volumes (reset databases)
 docker compose down -v
 
-# View service logs
+# View Docker service logs
 docker compose logs -f
 
 # Open Temporal UI
