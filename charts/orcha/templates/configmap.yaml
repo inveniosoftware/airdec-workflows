@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "orcha.fullname" . }}-app-config
+  labels:
+    {{- include "orcha.labels" . | nindent 4 }}
+data:
+  JWT_ALGORITHM: {{ .Values.appConfig.jwtAlgorithm | quote }}
+  AUTH_DISABLED: {{ .Values.appConfig.authDisabled | quote }}
+  TENANTS_CONFIG_PATH: {{ .Values.appConfig.tenantsConfigPath | quote }}
+  ALLOWED_ORIGINS: {{ .Values.appConfig.allowedOrigins | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "orcha.fullname" . }}-llm-config
+  labels:
+    {{- include "orcha.labels" . | nindent 4 }}
+data:
+  LLM: {{ .Values.llmConfig.llmModel | quote }}
+  LITELLM_API_BASE: {{ .Values.llmConfig.litellmApiBase | quote }}
+  OLLAMA_BASE_URL: {{ .Values.llmConfig.ollamaBaseUrl | quote }}

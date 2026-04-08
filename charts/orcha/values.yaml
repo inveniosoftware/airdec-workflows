@@ -1,0 +1,202 @@
+# Default values for orcha.
+
+replicaCount: 1
+
+image:
+  repository: orcha
+  pullPolicy: IfNotPresent
+  tag: "" # Overrides the image tag whose default is the chart appVersion.
+
+serviceAccount:
+  create: true
+  annotations: {}
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext:
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+  capabilities:
+    drop:
+      - ALL
+
+# Database Configuration Toggle
+postgresql:
+  enabled: true
+  fullnameOverride: "orcha-db"
+  auth:
+    username: postgres
+    database: orcha
+    # Do not set password here if you want to use existing secret, but bitnami postgresql needs it to generate it or read existing
+    # password: "postgres_password"
+    # existingSecret: "my-custom-db-secret"
+  primary:
+    initdb:
+      scripts:
+        init-temporal-dbs.sql: |
+          CREATE DATABASE temporal;
+          CREATE DATABASE temporal_visibility;
+
+externalDatabase:
+  enabled: false
+  host: ""
+  port: 5432
+  user: ""
+  database: "orcha"
+
+secrets:
+  db:
+    existingSecret: "" # e.g., my-db-secret
+    # If existingSecret is not provided, we will create a secret with this password.
+    # Must be set if existingSecret is empty.
+    password: ""
+  llm:
+    existingSecret: "" # e.g., my-llm-secret
+    # If existingSecret is not provided, we will create a secret with these keys
+    litellmApiKey: ""
+    ollamaApiKey: ""
+
+# Temporal Subchart Configuration
+temporal:
+  # Do not deploy the databases bundled with temporal
+  postgresql:
+    enabled: false
+  mysql:
+    enabled: false
+  cassandra:
+    enabled: false
+  elasticsearch:
+    enabled: false
+  prometheus:
+    enabled: false
+  grafana:
+    enabled: false
+
+  # Core server settings
+  server:
+    additionalVolumes:
+      - name: config-dir
+        emptyDir: {}
+    additionalVolumeMounts:
+      - name: config-dir
+        mountPath: /etc/temporal/config
+    # additionalInitContainers:
+    #   - name: copy-config
+    #     image: "temporalio/server:1.29.1"
+    #     command: ["sh", "-c", "cp -a /etc/temporal/config/* /tmp/config/"]
+    #     volumeMounts:
+    #       - name: config-dir
+    #         mountPath: /tmp/config
+    config:
+      persistence:
+        default:
+          driver: "sql"
+          sql:
+            driver: "postgres12"
+            user: "postgres"
+            # password should match the one provided to postgresql auth password or external DB
+            # Alternatively, if using an existing secret, comment out `password` and uncomment `existingSecret`
+            password: "postgres_password"
+            # existingSecret: "my-custom-db-secret"
+            # we use the fullnameOverride from above for our internal db
+            host: "orcha-db"
+            database: "temporal"
+            port: 5432
+        visibility:
+          driver: "sql"
+          sql:
+            driver: "postgres12"
+            user: "postgres"
+            # password should match the one provided to postgresql auth password or external DB
+            # Alternatively, if using an existing secret, comment out `password` and uncomment `existingSecret`
+            password: "postgres_password"
+            # existingSecret: "my-custom-db-secret"
+            host: "orcha-db"
+            database: "temporal_visibility"
+            port: 5432
+
+service:
+  type: ClusterIP
+  port: 8000
+  containerPort: 8000
+
+probes:
+  liveness:
+    httpGet:
+      path: /healthz
+      port: http
+    initialDelaySeconds: 15
+    periodSeconds: 20
+  readiness:
+    httpGet:
+      path: /healthz
+      port: http
+    initialDelaySeconds: 5
+    periodSeconds: 10
+  startup:
+    httpGet:
+      path: /healthz
+      port: http
+    failureThreshold: 30
+    periodSeconds: 5
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+route:
+  app:
+    enabled: false
+    host: ""
+    path: "/"
+    wildcardPolicy: "None"
+    annotations: {}
+    targetPort: "http"
+    tls: {}
+  temporalWeb:
+    enabled: false
+    host: ""
+    path: "/"
+    wildcardPolicy: "None"
+    annotations: {}
+    serviceName: ""
+    targetPort: "http"
+    tls: {}
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Application-specific environment variables
+appConfig:
+  jwtAlgorithm: "RS256"
+  authDisabled: "False"
+  tenantsConfigPath: "tenants.json"
+  allowedOrigins: '["http://localhost:3000","http://127.0.0.1:3000"]'
+
+# LLM-specific configuration
+llmConfig:
+  llmModel: "ollama/qwen3:4b"
+  litellmApiBase: "<litellm-endpoint>"
+  ollamaBaseUrl: "http://localhost:11434/v1"

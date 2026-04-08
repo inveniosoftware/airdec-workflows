@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "orcha.fullname" . }}
+  labels:
+    {{- include "orcha.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "orcha.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "orcha.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "orcha.fullname" . }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.containerPort }}
+              protocol: TCP
+          {{- with .Values.probes.liveness }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.probes.readiness }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.probes.startup }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "orcha.fullname" . }}-app-config
+            - configMapRef:
+                name: {{ include "orcha.fullname" . }}-llm-config
+          env:
+            - name: PGUSER
+              value: {{ include "orcha.databaseUser" . | quote }}
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orcha.dbSecretName" . }}
+                  key: password
+            - name: PGHOST
+              value: {{ include "orcha.databaseHost" . | quote }}
+            - name: PGPORT
+              value: {{ include "orcha.databasePort" . | quote }}
+            - name: PGDATABASE
+              value: {{ include "orcha.databaseName" . | quote }}
+            - name: TEMPORAL_HOST
+              value: {{ include "orcha.temporalHost" . | quote }}
+            {{- if or .Values.secrets.llm.litellmApiKey .Values.secrets.llm.existingSecret }}
+            - name: LITELLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orcha.llmSecretName" . }}
+                  key: litellmApiKey
+                  optional: true
+            {{- end }}
+            {{- if or .Values.secrets.llm.ollamaApiKey .Values.secrets.llm.existingSecret }}
+            - name: OLLAMA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orcha.llmSecretName" . }}
+                  key: ollamaApiKey
+                  optional: true
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
