@@ -54,8 +54,14 @@ if _settings.allowed_origins:
 
 app.include_router(workflows.router)
 
+@app.get("/healthz")
+async def healthz():
+    """Health check endpoint for Kubernetes probes."""
+    return {"status": "ok"}
+
 
 @app.get("/")
 async def root(auth=Depends(get_current_user)):
-    """Health check endpoint."""
+    """Root endpoint."""
     return {"message": "This is the backend service for Orcha!"}
+
