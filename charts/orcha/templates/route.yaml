@@ -1,0 +1,61 @@
+{{- if .Values.route.app.enabled }}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ include "orcha.fullname" . }}
+  labels:
+    {{- include "orcha.labels" . | nindent 4 }}
+  {{- with .Values.route.app.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.route.app.host }}
+  host: {{ .Values.route.app.host | quote }}
+  {{- end }}
+  {{- if .Values.route.app.path }}
+  path: {{ .Values.route.app.path | quote }}
+  {{- end }}
+  wildcardPolicy: {{ .Values.route.app.wildcardPolicy | quote }}
+  to:
+    kind: Service
+    name: {{ include "orcha.fullname" . }}
+    weight: 100
+  port:
+    targetPort: {{ .Values.route.app.targetPort | quote }}
+  {{- with .Values.route.app.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- if .Values.route.temporalWeb.enabled }}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ include "orcha.temporalWebServiceName" . }}
+  labels:
+    {{- include "orcha.labels" . | nindent 4 }}
+  {{- with .Values.route.temporalWeb.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.route.temporalWeb.host }}
+  host: {{ .Values.route.temporalWeb.host | quote }}
+  {{- end }}
+  {{- if .Values.route.temporalWeb.path }}
+  path: {{ .Values.route.temporalWeb.path | quote }}
+  {{- end }}
+  wildcardPolicy: {{ .Values.route.temporalWeb.wildcardPolicy | quote }}
+  to:
+    kind: Service
+    name: {{ include "orcha.temporalWebServiceName" . }}
+    weight: 100
+  port:
+    targetPort: {{ .Values.route.temporalWeb.targetPort | quote }}
+  {{- with .Values.route.temporalWeb.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
