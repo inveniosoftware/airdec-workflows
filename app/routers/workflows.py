@@ -99,6 +99,7 @@ async def create(
         params=params.model_dump(mode="json"),
         tenant_id=auth.tenant_id,
     )
+
     try:
         session.add(workflow)
         session.commit()
@@ -108,17 +109,16 @@ async def create(
         raise HTTPException(status_code=500, detail="Could not create workflow")
 
     try:
-        workflow_request = spec.request_builder(
-            WorkflowContext(
-                workflow_id=workflow_id,
-                tenant_id=auth.tenant_id,
-            ),
-            params,
-        )
         client = _get_temporal_client(request)
         await client.start_workflow(
             spec.workflow_fn,
-            args=[workflow_request],
+            args=[
+                WorkflowContext(
+                    workflow_id=workflow_id,
+                    tenant_id=auth.tenant_id,
+                ),
+                params,
+            ],
             id=f"{spec.id_prefix}-{workflow_id}",
             task_queue=spec.task_queue,
         )
