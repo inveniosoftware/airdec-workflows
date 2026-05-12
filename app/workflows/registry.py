@@ -3,17 +3,22 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
-@dataclass(frozen=True)
-class WorkflowContext:
+class WorkflowContext(BaseModel):
     """Server-generated context attached to every workflow invocation."""
 
     workflow_id: str
     tenant_id: str
+
+
+class WorkflowParams(BaseModel):
+    """Base model for user-provided workflow params."""
+
+    model_config = ConfigDict(extra="forbid")
 
 
 @dataclass(frozen=True)
@@ -23,11 +28,8 @@ class WorkflowSpec:
     workflow_fn: Any
     """Entry-point method of the ``@workflow.defn`` class."""
 
-    params_model: type[BaseModel]
+    params_model: type[WorkflowParams]
     """Pydantic model used to validate workflow-specific input params."""
-
-    request_builder: Callable[[WorkflowContext, BaseModel], BaseModel]
-    """Build the internal workflow request from validated params + context."""
 
     task_queue: str
     """Temporal task queue that workers listen on for this workflow."""

@@ -471,10 +471,12 @@ def test_create_workflow_stamps_tenant_id(client, db_session, mocker):
     assert wf.public_id == created_id
 
     mock_temporal.start_workflow.assert_awaited_once()
-    workflow_request = mock_temporal.start_workflow.await_args.kwargs["args"][0]
-    assert workflow_request.workflow_id == created_id
-    assert workflow_request.tenant_id == "tenant-a"
-    assert workflow_request.url == "https://example.com/doc.pdf"
+    workflow_context, workflow_params = mock_temporal.start_workflow.await_args.kwargs[
+        "args"
+    ]
+    assert workflow_context.workflow_id == created_id
+    assert workflow_context.tenant_id == "tenant-a"
+    assert str(workflow_params.url) == "https://example.com/doc.pdf"
 
 
 def test_create_workflow_rejects_invalid_params(client, db_session, mocker):
