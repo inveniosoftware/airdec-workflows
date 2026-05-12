@@ -5,23 +5,23 @@ description = "backend for orcha ai extraction"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "typer>=0.15.0",
+    "typer>=0.25.1",
     "fastapi-limiter>=0.2.0",
-    "fastapi[standard]>=0.112.1",
-    "httpx>=0.27.0",
+    "fastapi[standard]>=0.136.1",
+    "httpx>=0.28.1",
     "nanoid>=2.0.0",
-    "pdfplumber>=0.11.0",
-    "pymupdf==1.26.6",
-    "pymupdf4llm==0.2.4",
-    "psycopg[binary]>=3.3.2",
-    "pydantic>=2.0.0",
-    "pydantic-ai>=0.0.49",
-    "python-multipart>=0.0.9",
-    "sqlalchemy>=2.0.46",
-    "sqlmodel>=0.0.37",
-    "temporalio>=1.7.0",
-    "PyJWT>=2.0.0",
-    "cryptography>=44.0.0",
+    "pdfplumber>=0.11.9",
+    "pymupdf>=1.27.2.3",
+    "pymupdf4llm>=1.27.2.3",
+    "psycopg[binary]>=3.3.4",
+    "pydantic>=2.13.4",
+    "pydantic-ai>=1.94.0",
+    "python-multipart>=0.0.28",
+    "sqlalchemy>=2.0.49",
+    "sqlmodel>=0.0.38",
+    "temporalio>=1.27.0",
+    "PyJWT>=2.12.1",
+    "cryptography>=48.0.0",
 ]
 
 [project.scripts]
@@ -36,10 +36,10 @@ packages = ["app"]
 
 [dependency-groups]
 dev = [
-    "ruff>=0.9.0",
-    "pytest>=8.0.0",
-    "pytest-asyncio>=0.23.0",
-    "pytest-mock>=3.14.0",
+    "ruff>=0.15.12",
+    "pytest>=9.0.3",
+    "pytest-asyncio>=1.3.0",
+    "pytest-mock>=3.15.1",
     "ty>=0.0.35",
 ]
 
