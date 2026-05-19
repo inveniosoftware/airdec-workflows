@@ -71,11 +71,14 @@ def server():
 
 
 @run_app.command()
-def workers():
+def workers(task_queue: str | None = None):
     """Start the Temporal worker."""
     typer.echo("Starting Temporal worker...")
+    command = ["uv", "run", "python", "-m", "app.workers"]
+    if task_queue is not None:
+        command.extend(["--task-queue", task_queue])
     result = subprocess.run(
-        ["uv", "run", "python", "-m", "app.workers"],
+        command,
         cwd=PROJECT_ROOT,
     )
     sys.exit(result.returncode)

@@ -1,56 +1,22 @@
-"""Workflow registry — maps workflow type names to Temporal dispatch details."""
+"""Explicit workflow registry."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any
+from app.workflows.extract_metadata_workflow import (
+    ExtractMetadata,
+    ExtractMetadataParams,
+)
+from app.workflows.queues import DEFAULT_TASK_QUEUE
+from app.workflows.specs import WorkflowSpec
 
-from pydantic import BaseModel, ConfigDict
-
-
-class WorkflowContext(BaseModel):
-    """Server-generated context attached to every workflow invocation."""
-
-    workflow_id: str
-    tenant_id: str
-
-
-class WorkflowParams(BaseModel):
-    """Base model for user-provided workflow params."""
-
-    model_config = ConfigDict(extra="forbid")
-
-
-@dataclass(frozen=True)
-class WorkflowSpec:
-    """Describes a Temporal workflow that the API can dispatch."""
-
-    workflow_fn: Any
-    """Entry-point method of the ``@workflow.defn`` class."""
-
-    params_model: type[WorkflowParams]
-    """Pydantic model used to validate workflow-specific input params."""
-
-    task_queue: str
-    """Temporal task queue that workers listen on for this workflow."""
-
-    id_prefix: str
-    """Prefix used when constructing the Temporal workflow ID."""
-
-
-# Global registry — populated at import time by each workflow module.
-WORKFLOW_REGISTRY: dict[str, WorkflowSpec] = {}
-
-
-def register_workflow(name: str, spec: WorkflowSpec) -> None:
-    """Register a workflow type.
-
-    Raises:
-        ValueError: If *name* is already registered.
-    """
-    if name in WORKFLOW_REGISTRY:
-        raise ValueError(f"Workflow type {name!r} is already registered")
-    WORKFLOW_REGISTRY[name] = spec
+WORKFLOW_REGISTRY: dict[str, WorkflowSpec] = {
+    "extract_metadata": WorkflowSpec(
+        workflow_cls=ExtractMetadata,
+        params_model=ExtractMetadataParams,
+        task_queue=DEFAULT_TASK_QUEUE,
+        id_prefix="extract-metadata",
+    ),
+}
 
 
 def get_workflow_spec(name: str) -> WorkflowSpec:
@@ -71,3 +37,18 @@ def get_workflow_spec(name: str) -> WorkflowSpec:
 def get_registered_types() -> list[str]:
     """Return a sorted list of all registered workflow type names."""
     return sorted(WORKFLOW_REGISTRY)
+
+
+def get_registered_specs() -> list[WorkflowSpec]:
+    """Return registered workflow specs sorted by workflow type."""
+    return [WORKFLOW_REGISTRY[name] for name in get_registered_types()]
+
+
+def get_specs_for_task_queue(task_queue: str) -> list[WorkflowSpec]:
+    """Return registered workflow specs served by a task queue."""
+    return [spec for spec in get_registered_specs() if spec.task_queue == task_queue]
+
+
+def get_registered_task_queues() -> list[str]:
+    """Return task queues referenced by registered workflow specs."""
+    return sorted({spec.task_queue for spec in WORKFLOW_REGISTRY.values()})

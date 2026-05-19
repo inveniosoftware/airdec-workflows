@@ -14,7 +14,8 @@ from app.auth import AuthContext, decode_access_token
 from app.database.models import Workflow, WorkflowStatus
 from app.database.session import get_db_session
 from app.dependencies import get_current_user
-from app.workflows.registry import WorkflowContext, get_workflow_spec
+from app.workflows.registry import get_workflow_spec
+from app.workflows.specs import WorkflowContext
 
 router = APIRouter(
     prefix="/workflows",
@@ -111,7 +112,7 @@ async def create(
     try:
         client = _get_temporal_client(request)
         await client.start_workflow(
-            spec.workflow_fn,
+            spec.workflow_cls.run,
             args=[
                 WorkflowContext(
                     workflow_id=workflow_id,

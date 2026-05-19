@@ -20,11 +20,9 @@ from app.activities.store_workflow_result import (
 )
 from app.database.models import WorkflowStatus
 from app.schemas.metadata_suggestions import MetadataSuggestions
-from app.workflows.registry import (
+from app.workflows.specs import (
     WorkflowContext,
     WorkflowParams,
-    WorkflowSpec,
-    register_workflow,
 )
 
 
@@ -90,14 +88,3 @@ class ExtractMetadata(PydanticAIWorkflow):
         )
 
         return result
-
-
-register_workflow(
-    "extract_metadata",
-    WorkflowSpec(
-        workflow_fn=ExtractMetadata.run,
-        params_model=ExtractMetadataParams,
-        task_queue="extract-pdf-metadata-task-queue",
-        id_prefix="extract-metadata",
-    ),
-)

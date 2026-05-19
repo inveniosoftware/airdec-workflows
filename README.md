@@ -36,7 +36,10 @@ uv run orcha run
 
 # Or start them individually
 uv run orcha run server     # FastAPI dev server
-uv run orcha run workers    # Temporal worker
+uv run orcha run workers    # Temporal worker for the default queue
+
+# Run a worker for a specific queue
+uv run orcha run workers --task-queue low-priority
 ```
 
 ## Authentication
@@ -153,14 +156,15 @@ export OLLAMA_BASE_URL="http://localhost:11434/v1"
 
 ## CLI Reference
 
-| Command                | Description                              |
-|------------------------| ---------------------------------------- |
-| `orcha services start` | Start PostgreSQL + Temporal via Docker   |
-| `orcha services stop`  | Stop all Docker services                 |
-| `orcha init-db`        | Create database tables from models       |
-| `orcha run`            | Start both server and worker             |
-| `orcha run server`     | Start FastAPI dev server only            |
-| `orcha run workers`    | Start Temporal worker only               |
+| Command                            | Description                               |
+|------------------------------------|-------------------------------------------|
+| `orcha services start`             | Start PostgreSQL + Temporal via Docker    |
+| `orcha services stop`              | Stop all Docker services                  |
+| `orcha init-db`                    | Create database tables from models        |
+| `orcha run`                        | Start server and default-queue worker     |
+| `orcha run server`                 | Start FastAPI dev server only             |
+| `orcha run workers`                | Start Temporal worker for default queue   |
+| `orcha run workers --task-queue Q` | Start Temporal worker for a specific queue |
 
 ## Useful Commands
 
