@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CERN.
+# SPDX-License-Identifier: MIT
+
 """FastAPI application entry point with multi-tenant auth."""
 
 from contextlib import asynccontextmanager

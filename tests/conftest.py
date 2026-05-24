@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CERN.
+# SPDX-License-Identifier: MIT
+
 """Shared test fixtures for the Orcha test suite."""
 
 import pytest

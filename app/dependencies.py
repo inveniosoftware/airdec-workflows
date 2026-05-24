@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CERN.
+# SPDX-License-Identifier: MIT
+
 """FastAPI dependencies for multi-tenant authentication."""
 
 from typing import Annotated

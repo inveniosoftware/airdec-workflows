@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CERN.
+# SPDX-License-Identifier: MIT
+
 """Activities for the Orcha application."""
 
 from .extract_metadata import extract_metadata_with_llm

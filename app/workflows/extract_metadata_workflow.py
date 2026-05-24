@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CERN.
+# SPDX-License-Identifier: MIT
+
 from datetime import timedelta
 
 from pydantic import Field, HttpUrl

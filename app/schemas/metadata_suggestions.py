@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CERN.
+# SPDX-License-Identifier: MIT
+
 """Typed metadata suggestions returned by the workflow."""
 
 # from __future__ import annotations

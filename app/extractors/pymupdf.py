@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CERN.
+# SPDX-License-Identifier: MIT
+
 """PyMuPDF-based PDF extractor."""
 
 from typing import Any, Dict, List, Optional

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CERN.
+# SPDX-License-Identifier: MIT
+
 """Workflow API routes with tenant-scoped access control."""
 
 import asyncio

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CERN.
+# SPDX-License-Identifier: MIT
+
 """Base class for PDF extractors."""
 
 from abc import ABC, abstractmethod

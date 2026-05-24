@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CERN.
+# SPDX-License-Identifier: MIT
+
 """Activity to persist workflow results and status in the database."""
 
 from __future__ import annotations

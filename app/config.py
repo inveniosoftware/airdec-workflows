@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CERN.
+# SPDX-License-Identifier: MIT
+
 """Centralized application settings using Pydantic Settings."""
 
 from functools import lru_cache

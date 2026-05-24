@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CERN.
+# SPDX-License-Identifier: MIT
+
 import httpx
 from pydantic import BaseModel
 from temporalio import activity

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CERN.
+# SPDX-License-Identifier: MIT
+
 """JWT authentication utilities for multi-tenant RS256 token verification."""
 
 from dataclasses import dataclass

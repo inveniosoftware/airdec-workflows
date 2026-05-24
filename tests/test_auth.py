@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CERN.
+# SPDX-License-Identifier: MIT
+
 """Tests for multi-tenant JWT authentication."""
 
 from datetime import datetime, timedelta, timezone

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CERN.
+# SPDX-License-Identifier: MIT
+
 """PDF extraction modules."""
 
 from .pdfplumber import PdfplumberExtractor
