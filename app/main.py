@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from temporalio.client import Client
+from temporalio.contrib.pydantic import pydantic_data_converter
 
 from .config import get_settings
 from .database.session import dispose_engine, init_engine
@@ -22,7 +23,10 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     engine = init_engine()
     app.state.db_engine = engine
-    app.state.temporal_client = await Client.connect(settings.temporal_host)
+    app.state.temporal_client = await Client.connect(
+        settings.temporal_host,
+        data_converter=pydantic_data_converter,
+    )
 
     # Load tenant registry
     if not settings.auth_disabled:

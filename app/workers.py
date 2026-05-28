@@ -6,6 +6,7 @@ import asyncio
 
 from pydantic_ai.durable_exec.temporal import PydanticAIPlugin
 from temporalio.client import Client
+from temporalio.contrib.pydantic import pydantic_data_converter
 from temporalio.worker import Worker
 
 from app.activities import REGISTERED_ACTIVITIES
@@ -43,6 +44,7 @@ async def main(task_queue: str | None = None):
 
     client = await Client.connect(
         settings.temporal_host,
+        data_converter=pydantic_data_converter,
         plugins=[PydanticAIPlugin()],
     )
 
