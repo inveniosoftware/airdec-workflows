@@ -178,3 +178,24 @@ docker compose logs -f
 # Open Temporal UI
 open http://localhost:8080
 ```
+
+## Docker Image Release
+
+Docker images are automatically built and published to `registry.cern.ch/orcha/orcha` by the [Docker workflow](.github/workflows/dockerpublish.yml).
+
+### Triggers
+
+| Event | Image tag |
+|---|---|
+| Push to `main` | `latest` |
+| Push a `v*` tag (e.g. `v1.2.3`) | `1.2.3` |
+| Manual via GitHub UI (`workflow_dispatch`) | depends on branch/tag |
+
+### Required secrets
+
+The workflow uses two repository secrets that must be configured in `Settings → Secrets and variables → Actions`:
+
+| Secret | Description                     |
+|---|---------------------------------|
+| `REGISTRY_USER` | registry robot account username |
+| `REGISTRY_PASSWORD` | registry robot account password |
