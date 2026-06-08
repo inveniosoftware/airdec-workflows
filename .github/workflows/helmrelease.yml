@@ -1,0 +1,39 @@
+name: Release Helm Chart
+
+on:
+  push:
+    paths:
+      - 'charts/orcha/**'
+
+env:
+  REGISTRY: registry.cern.ch
+  REPOSITORY: orcha
+  CHART_NAME: orcha
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Login to Harbor
+        run: |
+          helm registry login ${{ env.REGISTRY }} \
+            --username ${{ secrets.REGISTRY_USER }} \
+            --password ${{ secrets.REGISTRY_PASSWORD }} \
+
+      - name: Lint chart
+        run: helm lint charts/orcha
+
+      - name: Package chart
+        run: |
+          helm package charts/orcha
+
+      - name: Push to Harbor (OCI)
+        run: |
+          helm push ${{ env.CHART_NAME }}-*.tgz \
+          oci://${{ env.REGISTRY }}/${{ env.REPOSITORY }}
