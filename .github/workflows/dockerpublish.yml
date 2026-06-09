@@ -6,6 +6,11 @@ on:
         description: "Reason"
         required: false
         default: "Manual trigger"
+      tag:
+        description: "Docker image tag (e.g. 1.2.3)"
+        required: false
+        default: ""
+
   push:
     # Publish `v1.2.3` tags as releases.
     tags:
@@ -33,8 +38,8 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=semver,pattern={{version}}
-            # set latest tag for default branch (main)
-            type=raw,value=latest,enable={{is_default_branch}}
+            # use manual tag if provided via workflow_dispatch
+            type=raw,value=${{ inputs.tag }},enable=${{ inputs.tag != '' }}
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
