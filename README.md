@@ -187,7 +187,6 @@ Docker images are automatically built and published to `registry.cern.ch/orcha/o
 
 | Event | Image tag |
 |---|---|
-| Push to `main` | `latest` |
 | Push a `v*` tag (e.g. `v1.2.3`) | `1.2.3` |
 | Manual via GitHub UI (`workflow_dispatch`) | depends on branch/tag |
 
