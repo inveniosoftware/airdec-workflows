@@ -25,6 +25,12 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.persistence.tenants.enabled }}
+      volumes:
+        - name: tenants-config
+          persistentVolumeClaim:
+            claimName: {{ include "orcha.fullname" . }}-tenants
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -86,5 +92,10 @@ spec:
                   key: ollamaApiKey
                   optional: true
             {{- end }}
+          {{- if .Values.persistence.tenants.enabled }}
+          volumeMounts:
+            - name: tenants-config
+              mountPath: {{ .Values.persistence.tenants.mountPath }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
