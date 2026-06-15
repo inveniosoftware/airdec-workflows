@@ -60,12 +60,13 @@ class TenantRegistry:
             A TenantRegistry populated with the tenants from the file.
 
         Raises:
-            FileNotFoundError: If the config file does not exist.
             ValueError: If the JSON structure is invalid.
         """
         config_path = Path(path)
         if not config_path.exists():
-            raise FileNotFoundError(f"Tenant config file not found: {config_path}")
+            config_path.parent.mkdir(parents=True, exist_ok=True)
+            config_path.write_text("{}")
+            return cls()
 
         raw = json.loads(config_path.read_text())
         tenants: dict[str, TenantConfig] = {}

@@ -1,0 +1,17 @@
+{{- if .Values.persistence.tenants.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "orcha.fullname" . }}-tenants
+  labels:
+    {{- include "orcha.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.tenants.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.tenants.size }}
+  {{- if .Values.persistence.tenants.storageClass }}
+  storageClassName: {{ .Values.persistence.tenants.storageClass | quote }}
+  {{- end }}
+{{- end }}

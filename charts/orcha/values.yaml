@@ -188,11 +188,20 @@ tolerations: []
 
 affinity: {}
 
+# Persistent storage for tenants config
+persistence:
+  tenants:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 64Mi
+    storageClass: ""
+    mountPath: /data/tenants
+
 # Application-specific environment variables
 appConfig:
   jwtAlgorithm: "RS256"
   authDisabled: "False"
-  tenantsConfigPath: "tenants.json"
+  tenantsConfigPath: "/data/tenants/tenants.json"
   allowedOrigins: '["http://localhost:3000","http://127.0.0.1:3000"]'
 
 # LLM-specific configuration
