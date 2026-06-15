@@ -7,10 +7,8 @@ import sys
 from pathlib import Path
 
 import typer
-from sqlmodel import SQLModel
-
-from app.database.models import Workflow  # noqa: F401
-from app.database.session import dispose_engine, init_engine
+from alembic import command
+from alembic.config import Config
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -25,13 +23,9 @@ app.add_typer(run_app, name="run")
 
 @app.command()
 def init_db():
-    """Create all database tables from models."""
-    # TODO: If more commands need the DB, consider moving engine
-    # init/dispose into a Typer callback so it's shared automatically.
-    engine = init_engine()
-    SQLModel.metadata.create_all(engine)
-    typer.echo("Database tables created successfully.")
-    dispose_engine()
+    """Apply all database migrations."""
+    command.upgrade(Config(PROJECT_ROOT / "alembic.ini"), "head")
+    typer.echo("Database migrations applied successfully.")
 
 
 # ── services ──

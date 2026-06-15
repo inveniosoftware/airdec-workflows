@@ -22,7 +22,7 @@ uv sync
 uv run orcha services start
 ```
 
-### 3. Create database tables
+### 3. Apply database migrations
 
 ```bash
 uv run orcha init-db
@@ -160,11 +160,25 @@ export OLLAMA_BASE_URL="http://localhost:11434/v1"
 |------------------------------------|-------------------------------------------|
 | `orcha services start`             | Start PostgreSQL + Temporal via Docker    |
 | `orcha services stop`              | Stop all Docker services                  |
-| `orcha init-db`                    | Create database tables from models        |
+| `orcha init-db`                    | Apply all database migrations             |
 | `orcha run`                        | Start server and default-queue worker     |
 | `orcha run server`                 | Start FastAPI dev server only             |
 | `orcha run workers`                | Start Temporal worker for default queue   |
 | `orcha run workers --task-queue Q` | Start Temporal worker for a specific queue |
+
+## Database Migrations
+
+The deployed schema is managed with Alembic. Apply committed migrations with:
+
+```bash
+uv run alembic upgrade head
+```
+
+For local setup, `uv run orcha init-db` is a convenience wrapper around the
+same Alembic upgrade.
+
+See [Database Migrations](docs/migrations.md) for the full process of generating
+and reviewing migrations when SQLModel models change.
 
 ## Useful Commands
 

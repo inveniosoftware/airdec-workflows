@@ -1,0 +1,4 @@
+Database migrations for Orcha Workflows.
+
+Create revisions and apply migrations from the repository root. See
+docs/migrations.md for the full workflow.
