@@ -5,7 +5,7 @@ replicaCount: 1
 image:
   repository: orcha
   pullPolicy: IfNotPresent
-  tag: "" # Overrides the image tag whose default is the chart appVersion.
+  tag: "" # Required
 
 serviceAccount:
   create: true
