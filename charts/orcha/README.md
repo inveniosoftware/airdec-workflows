@@ -21,8 +21,6 @@ the chart in the `charts/orcha` directory. All example `helm` commands below sho
 
 ## Deployment
 
-The sections that follow describe various deployment configurations.
-
 ### Namespace/project
 
 Create the namespace / project ahead of the first-time deployment.
@@ -81,21 +79,14 @@ temporal.server.config.persistance to ensure they match your needs.
 
 **1. Prepare the external database**
 
-Your database instance must have **three databases** before deploying. If using PostgreSQL, connect to your
-instance with an admin user and run:
+Your database instance must have a user with CREATEDB permission, and **three databases** owned by that user.
 
-```sql
-ALTER ROLE orcha CREATEDB;
-```
+This user needs to match the user in externalDatabase and in the Temporal persistence configuration in values.yaml.
 
-> `<db-user>` is the database user set in `values.yaml`. Change it if the database user in your values is different.
- 
-Then, login to the database as the `orcha` user and run:
-```sql
-CREATE DATABASE orcha;
-CREATE DATABASE temporal;
-CREATE DATABASE temporal_visibility;
-```
+The three databases that should be created are:
+- orcha
+- temporal
+- temporal_visibility
 
 > The bundled PostgreSQL init script (`initdb`) that creates `temporal` and `temporal_visibility` only runs when the
 > internal PostgreSQL subchart is enabled. With an external DB, you must create these manually.
@@ -170,23 +161,6 @@ helm upgrade --install orcha ./charts/orcha \
   -n <namespace> \
   --create-namespace
 ```
-
-### Verifying installation
-
-To check that your deployment works correctly, run:
-
-```bash
-oc get pods -n <namespace>
-oc get routes -n <namespace>
-```
-
-Check the app logs for DB connectivity and Temporal connection:
-
-```bash
-oc logs deployment/orcha -n <namespace>
-```
-
----
 
 ## Upgrading
 
