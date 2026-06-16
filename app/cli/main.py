@@ -57,13 +57,19 @@ def stop():
 
 
 @run_app.command()
-def server():
-    """Start the FastAPI development server."""
-    typer.echo("Starting FastAPI server...")
-    result = subprocess.run(
-        ["uv", "run", "fastapi", "dev", "app/main.py"],
-        cwd=PROJECT_ROOT,
-    )
+def server(
+    dev: bool = typer.Option(
+        False, "--dev", help="Run in development mode with hot reload."
+    ),
+):
+    """Start the FastAPI server."""
+    if dev:
+        typer.echo("Starting FastAPI development server...")
+        cmd = ["uv", "run", "fastapi", "dev", "app/main.py"]
+    else:
+        typer.echo("Starting FastAPI server...")
+        cmd = ["uv", "run", "fastapi", "run", "app/main.py"]
+    result = subprocess.run(cmd, cwd=PROJECT_ROOT)
     sys.exit(result.returncode)
 
 
