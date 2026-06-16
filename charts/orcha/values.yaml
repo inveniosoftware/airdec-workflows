@@ -206,6 +206,6 @@ appConfig:
 
 # LLM-specific configuration
 llmConfig:
-  llmModel: "litellm/groq/qwen/qwen3-32b"
+  llmModel: ""  # Defaults to the app's built-in default if not set
   litellmApiBase: "<litellm-endpoint>"
   ollamaBaseUrl: "http://localhost:11434/v1"
