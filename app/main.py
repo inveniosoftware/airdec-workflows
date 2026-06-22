@@ -3,10 +3,17 @@
 
 """FastAPI application entry point with multi-tenant auth."""
 
+import logging
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
+from fastapi.exception_handlers import (
+    http_exception_handler,
+    request_validation_exception_handler,
+)
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from temporalio.client import Client
 from temporalio.contrib.pydantic import pydantic_data_converter
 
@@ -15,6 +22,8 @@ from .database.session import dispose_engine, init_engine
 from .dependencies import get_current_user
 from .routers import workflows
 from .tenants import TenantRegistry
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -51,6 +60,32 @@ if _settings.allowed_origins:
         allow_methods=["GET"],
         allow_headers=["*"],
     )
+
+
+@app.exception_handler(StarletteHTTPException)
+async def custom_http_exception_handler(request, exc):
+    """Custom error handling for logging HTTP errors."""
+    logger.warning(
+        "HTTP %s on %s %s: %s",
+        exc.status_code,
+        request.method,
+        request.url.path,
+        exc.detail,
+    )
+    return await http_exception_handler(request, exc)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Custom error handling for logging the Pydantic validation errors."""
+    logger.warning(
+        "Validation error on %s %s: %s",
+        request.method,
+        request.url.path,
+        exc.errors(),
+    )
+    return await request_validation_exception_handler(request, exc)
+
 
 app.include_router(workflows.router)
 

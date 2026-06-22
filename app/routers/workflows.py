@@ -4,6 +4,7 @@
 """Workflow API routes with tenant-scoped access control."""
 
 import asyncio
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -19,6 +20,8 @@ from app.database.session import get_db_session
 from app.dependencies import get_current_user
 from app.workflows.registry import get_workflow_spec
 from app.workflows.specs import WorkflowContext
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/workflows",
@@ -108,8 +111,8 @@ async def create(
         session.add(workflow)
         session.commit()
         workflow_id = workflow.public_id
-    except SQLAlchemyError as e:
-        print("Error(create)", e)
+    except SQLAlchemyError:
+        logger.exception("Error creating workflow")
         raise HTTPException(status_code=500, detail="Could not create workflow")
 
     try:
@@ -126,8 +129,8 @@ async def create(
             id=f"{spec.id_prefix}-{workflow_id}",
             task_queue=spec.task_queue,
         )
-    except Exception as e:
-        print("Error(start_temporal_workflow)", e)
+    except Exception:
+        logger.exception("Error starting Temporal workflow")
         try:
             workflow.status = WorkflowStatus.ERROR
             session.commit()
@@ -153,8 +156,8 @@ async def read(
         workflow = session.exec(
             select(Workflow).where(Workflow.public_id == workflow_id)
         ).one()
-    except SQLAlchemyError as e:
-        print("Error(read)", e)
+    except SQLAlchemyError:
+        logger.exception("Error reading workflow")
         raise HTTPException(status_code=404, detail="Workflow not found")
 
     verify_tenant_owns_workflow(auth, workflow)
@@ -178,8 +181,8 @@ async def workflow_event(request: Request, workflow_id: str):
 
                 if status == "ERROR" or status == "SUCCESS":
                     break
-            except SQLAlchemyError as e:
-                print("Error(stream)", e)
+            except SQLAlchemyError:
+                logger.exception("Error streaming workflow status")
                 raise HTTPException(status_code=500)
 
         await asyncio.sleep(STREAM_DELAY)
