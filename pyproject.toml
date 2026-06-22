@@ -1,6 +1,6 @@
 [project]
 name = "orcha-backend"
-version = "0.1.1"
+version = "0.1.2"
 description = "backend for orcha ai extraction"
 readme = "README.md"
 requires-python = ">=3.14"
