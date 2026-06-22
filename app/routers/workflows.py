@@ -172,11 +172,12 @@ async def workflow_event(request: Request, workflow_id: str):
                 workflow = session.exec(
                     select(Workflow).where(Workflow.public_id == workflow_id)
                 ).one()
-                if workflow.status.name == "ERROR" or workflow.status.name == "SUCCESS":
-                    yield workflow.status.name
-                    break
+                status = workflow.status.name
 
-                yield workflow.status.name
+                yield f"data: {status}\n\n"
+
+                if status == "ERROR" or status == "SUCCESS":
+                    break
             except SQLAlchemyError as e:
                 print("Error(stream)", e)
                 raise HTTPException(status_code=500)
