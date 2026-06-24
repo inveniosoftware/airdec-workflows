@@ -4,8 +4,24 @@
 """Centralized application settings using Pydantic Settings."""
 
 from functools import lru_cache
+from typing import Any, Literal
 
+from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
+
+
+class LlmSettings(BaseModel):
+    """Extra LLM config, parsed from the JSON ``LLM_SETTINGS`` env var.
+
+    ``model`` is forwarded verbatim to the chat model's request settings
+    (``max_tokens``, ``extra_body``, ``temperature`` ...). The rest are Orcha
+    signals that decide how the agent is assembled.
+    """
+
+    # Orcha signal: structured-output strategy.
+    output: Literal["tool", "prompted"] = "tool"
+    # Passed straight to OpenAIChatModelSettings.
+    model: dict[str, Any] = Field(default_factory=dict)
 
 
 class Settings(BaseSettings):
@@ -33,6 +49,7 @@ class Settings(BaseSettings):
     # TODO Currently we have only a single workflow, so single LLM configuration
     # is fine. We can parameterize it or make it configurable per workflow later.
     llm: str = "ollama/qwen3:4b"
+    llm_settings: LlmSettings = Field(default_factory=LlmSettings)
     litellm_api_base: str = "<litellm-endpoint>"
     litellm_api_key: str | None = None
     ollama_base_url: str = "http://localhost:11434/v1"
