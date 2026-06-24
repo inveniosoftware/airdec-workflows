@@ -80,16 +80,8 @@ class PublicationDateSuggestion(BaseModel):
     @field_validator("value")
     @classmethod
     def normalize_publication_date(cls, v: str) -> str:
-        """Apply normalization for publication dates."""
-        cleaned = " ".join(v.split()).strip()
-        # Keep existing canonical full dates.
-        if len(cleaned) == 10 and cleaned[4] == "-" and cleaned[7] == "-":
-            return cleaned
-        # Convert YYYY-MM to YYYY.
-        if len(cleaned) == 7 and cleaned[4] == "-":
-            return cleaned[:4]
-        # Keep year-only and unknown formats as-is.
-        return cleaned
+        """Collapse whitespace; ISO 8601 date, year-month, and year are all kept."""
+        return " ".join(v.split()).strip()
 
 
 MetadataSuggestion = Annotated[
