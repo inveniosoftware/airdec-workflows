@@ -98,3 +98,43 @@ class MetadataSuggestions(BaseModel):
     """Container for all metadata suggestions from a workflow run."""
 
     suggestions: list[MetadataSuggestion]
+
+
+class ExtractedMetadata(BaseModel):
+    """Flat schema the LLM fills; converted to ``MetadataSuggestions``.
+
+    Smaller models handle a flat object far better than the discriminated union.
+    """
+
+    title: str | None = Field(default=None, description="Document title")
+    description: str | None = Field(default=None, description="Abstract or summary")
+    creators: list[Creator] = Field(
+        default_factory=list, description="Authors or creators"
+    )
+    doi: str | None = Field(default=None, description="The Digital Object Identifier")
+    publication_date: str | None = Field(
+        default=None,
+        description=(
+            "Publication date in ISO 8601, at the precision known: 'YYYY-MM-DD', "
+            "'YYYY-MM', or 'YYYY'. Normalize written dates: '17 July 2023' -> "
+            "'2023-07-17', 'July 2023' -> '2023-07', '2023' -> '2023'."
+        ),
+        examples=["2014-07-17", "2014-07", "2014"],
+    )
+
+    def to_suggestions(self) -> MetadataSuggestions:
+        """Build the typed suggestions, dropping null/empty fields."""
+        suggestions: list[MetadataSuggestion] = []
+        if self.title:
+            suggestions.append(TitleSuggestion(value=self.title))
+        if self.description:
+            suggestions.append(DescriptionSuggestion(value=self.description))
+        if self.creators:
+            creators = CreatorsSuggestion(value=self.creators)
+            if creators.value:
+                suggestions.append(creators)
+        if self.doi:
+            suggestions.append(DoiSuggestion(value=self.doi))
+        if self.publication_date:
+            suggestions.append(PublicationDateSuggestion(value=self.publication_date))
+        return MetadataSuggestions(suggestions=suggestions)

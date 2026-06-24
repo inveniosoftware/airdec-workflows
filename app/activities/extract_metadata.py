@@ -4,14 +4,14 @@
 """LLM-based metadata suggestions activity."""
 
 from pydantic import BaseModel, Field
-from pydantic_ai import Agent
-from pydantic_ai.models.openai import OpenAIChatModel
+from pydantic_ai import Agent, PromptedOutput
+from pydantic_ai.models.openai import OpenAIChatModel, OpenAIChatModelSettings
 from pydantic_ai.providers.litellm import LiteLLMProvider
 from pydantic_ai.providers.ollama import OllamaProvider
 from temporalio import activity
 
 from app.config import get_settings
-from app.schemas.metadata_suggestions import MetadataSuggestions
+from app.schemas.metadata_suggestions import ExtractedMetadata, MetadataSuggestions
 
 
 def _parse_llm(llm: str) -> tuple[str, str]:
@@ -33,45 +33,51 @@ class ExtractMetadataRequest(BaseModel):
     text: str = Field(description="Document text to analyze")
 
 
-INSTRUCTIONS = """\
-You generate metadata suggestions from document text.
-
-Return a list of typed suggestions for the following fields:
-- title (string)
-- description (string; the abstract/summary)
-- creators (list of objects with: name, affiliation (optional), orcid (optional))
-- doi (string; the Digital Object Identifier")
-- publication_date (string; ISO 8601, examples:
-    - "2014-07-17" (full date known)
-    - "2014" (only year known)
-    - Input: "17 July 2023" -> Output: "2023-07-17"
-    - Input: "July 2023" -> Output: "2023"
-    - Input: "2023-07" -> Output: "2023")
-
-Rules:
-- Only include information that is clearly stated in the text.
-- If a field is not present or cannot be determined, omit that suggestion entirely.
-- For creators.name, use the "Family, Given" format.
-"""
+INSTRUCTIONS = (
+    "You extract bibliographic metadata from the document text. "
+    "Only include information clearly stated in the text; "
+    "leave anything you cannot determine empty."
+)
 
 
-def _create_model() -> OpenAIChatModel:
-    """Create an OpenAI-compatible chat model from settings."""
+# Extra instruction pieces for prompted output (no native tool calls): cap
+# reasoning, then force a single JSON object.
+_REASONING_LOW = "Reasoning: low"
+_JSON_ONLY = (
+    "Respond immediately; do not deliberate. "
+    "Reply with exactly one JSON object matching the schema and nothing else."
+)
+
+
+def _build_agent(llm: str) -> Agent[None, ExtractedMetadata]:
+    """Build the extraction agent for `llm` from the configured settings."""
     settings = get_settings()
-    provider_name, model_name = _parse_llm(settings.llm)
+    cfg = settings.llm_settings
+    provider_name, model_name = _parse_llm(llm)
 
     if provider_name == "ollama":
         provider = OllamaProvider(
-            base_url=settings.ollama_base_url,
-            api_key=settings.ollama_api_key,
+            base_url=settings.ollama_base_url, api_key=settings.ollama_api_key
         )
     else:
         provider = LiteLLMProvider(
-            api_base=settings.litellm_api_base,
-            api_key=settings.litellm_api_key,
+            api_base=settings.litellm_api_base, api_key=settings.litellm_api_key
         )
 
-    return OpenAIChatModel(model_name=model_name, provider=provider)
+    model = OpenAIChatModel(
+        model_name=model_name,
+        provider=provider,
+        settings=OpenAIChatModelSettings(**cfg.model),
+    )
+    if cfg.output == "prompted":
+        return Agent[None, ExtractedMetadata](
+            model,
+            instructions=[_REASONING_LOW, INSTRUCTIONS, _JSON_ONLY],
+            output_type=PromptedOutput(ExtractedMetadata),
+        )
+    return Agent[None, ExtractedMetadata](
+        model, instructions=INSTRUCTIONS, output_type=ExtractedMetadata
+    )
 
 
 @activity.defn
@@ -79,12 +85,6 @@ async def extract_metadata_with_llm(
     request: ExtractMetadataRequest,
 ) -> MetadataSuggestions:
     """Generate typed metadata suggestions using an LLM."""
-    model = _create_model()
-    agent = Agent[None, MetadataSuggestions](
-        model=model,
-        instructions=INSTRUCTIONS,
-        output_type=MetadataSuggestions,
-    )
-
+    agent = _build_agent(get_settings().llm)
     result = await agent.run(request.text)
-    return result.output
+    return result.output.to_suggestions()
