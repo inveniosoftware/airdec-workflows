@@ -63,15 +63,10 @@ class PdfplumberExtractor(BaseExtractor):
                                 }
                             )
 
-        # Build full text including table content
+        # Page text already contains table cell text in reading order; the
+        # structured `tables` are returned in `extra` rather than flattened into
+        # `full_text`, which only duplicated content and added empty-cell noise.
         full_text = "\n\n".join(full_text_parts)
-
-        # Add table content to full_text for searchability
-        for table in tables:
-            for row in table["data"]:
-                if row:
-                    row_text = " | ".join(str(cell) if cell else "" for cell in row)
-                    full_text += "\n" + row_text
 
         # Extract ORCID IDs from hyperlinks and add to full_text
         # This makes ORCIDs discoverable even when they're only in link URLs
