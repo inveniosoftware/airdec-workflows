@@ -9,6 +9,7 @@ dependencies = [
     "fastapi-limiter>=0.2.0",
     "fastapi[standard]>=0.136.1",
     "httpx>=0.28.1",
+    "langfuse>=4.7.0",
     "nanoid>=2.0.0",
     "pdfplumber>=0.11.9",
     "pymupdf>=1.27.2.3",

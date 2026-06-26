@@ -14,7 +14,9 @@ from temporalio import activity
 from temporalio.common import RetryPolicy
 
 from app.config import get_settings
+from app.observability import propagate_langfuse_context
 from app.schemas.metadata_suggestions import ExtractedMetadata, MetadataSuggestions
+from app.workflows.specs import WorkflowContext
 
 EXTRACT_METADATA_RETRY_POLICY = RetryPolicy(
     initial_interval=timedelta(seconds=5),
@@ -93,8 +95,11 @@ def _build_agent(llm: str) -> Agent[None, ExtractedMetadata]:
 @activity.defn
 async def extract_metadata_with_llm(
     request: ExtractMetadataRequest,
+    context: WorkflowContext,
 ) -> MetadataSuggestions:
     """Generate typed metadata suggestions using an LLM."""
     agent = _build_agent(get_settings().llm)
-    result = await agent.run(request.text)
+    with propagate_langfuse_context(context, trace_name="extract_metadata"):
+        result = await agent.run(request.text)
+
     return result.output.to_suggestions()
