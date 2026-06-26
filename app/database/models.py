@@ -3,10 +3,11 @@
 
 """Database models for the Orcha workflow system."""
 
+from datetime import UTC, datetime
 from enum import Enum
 
 from nanoid import generate
-from sqlalchemy import JSON, Column
+from sqlalchemy import JSON, Column, DateTime
 from sqlmodel import Field, SQLModel
 
 
@@ -33,14 +34,15 @@ class Workflow(SQLModel, table=True):
     status: WorkflowStatus
     tenant_id: str
     result: dict | None = Field(default=None, sa_column=Column(JSON))
-
-    def to_dict(self):
-        """Convert workflow to a dictionary representation."""
-        return {
-            "public_id": self.public_id,
-            "workflow_type": self.workflow_type,
-            "status": self.status,
-            "params": self.params,
-            "tenant_id": self.tenant_id,
-            "result": self.result,
-        }
+    created: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_column=Column(DateTime(timezone=True), nullable=False),
+    )
+    start_time: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
+    end_time: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
