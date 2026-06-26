@@ -55,6 +55,12 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434/v1"
     ollama_api_key: str | None = None
 
+    # Langfuse
+    langfuse_enabled: bool = False
+    langfuse_public_key: str | None = None
+    langfuse_secret_key: str | None = None
+    langfuse_base_url: str | None = None
+
     @property
     def database_url(self) -> str:
         """Build the PostgreSQL connection string."""

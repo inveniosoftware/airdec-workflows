@@ -78,7 +78,7 @@ class ExtractMetadata(PydanticAIWorkflow):
             # Activity 2: Generate metadata suggestions using LLM
             result = await workflow.execute_activity(
                 extract_metadata_with_llm,
-                ExtractMetadataRequest(text=content.text),
+                args=[ExtractMetadataRequest(text=content.text), context],
                 start_to_close_timeout=timedelta(minutes=5),
                 retry_policy=EXTRACT_METADATA_RETRY_POLICY,
             )
