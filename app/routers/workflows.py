@@ -5,6 +5,7 @@
 
 import asyncio
 import logging
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -68,6 +69,8 @@ def verify_tenant_owns_workflow(auth: AuthContext, workflow: Workflow) -> None:
 
 @router.get(
     "/",
+    response_model=list[Workflow],
+    response_model_exclude={"__all__": {"id"}},
 )
 async def read_all(
     auth: AuthContext = Depends(get_current_user),
@@ -77,11 +80,13 @@ async def read_all(
     workflows = session.exec(
         select(Workflow).where(Workflow.tenant_id == auth.tenant_id)
     ).all()
-    return [workflow.to_dict() for workflow in workflows]
+    return workflows
 
 
 @router.post(
     "/",
+    response_model=Workflow,
+    response_model_exclude={"id"},
 )
 async def create(
     body: CreateWorkflowRequest,
@@ -133,16 +138,19 @@ async def create(
         logger.exception("Error starting Temporal workflow")
         try:
             workflow.status = WorkflowStatus.ERROR
+            workflow.end_time = datetime.now(UTC)
             session.commit()
         except SQLAlchemyError:
             pass
         raise HTTPException(status_code=500, detail="Could not start workflow")
 
-    return workflow.to_dict()
+    return workflow
 
 
 @router.get(
     "/{workflow_id}",
+    response_model=Workflow,
+    response_model_exclude={"id"},
 )
 async def read(
     workflow_id: str,
@@ -161,7 +169,7 @@ async def read(
         raise HTTPException(status_code=404, detail="Workflow not found")
 
     verify_tenant_owns_workflow(auth, workflow)
-    return workflow.to_dict()
+    return workflow
 
 
 async def workflow_event(request: Request, workflow_id: str):

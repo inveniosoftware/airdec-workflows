@@ -5,17 +5,17 @@
 
 from .extract_metadata import extract_metadata_with_llm
 from .extract_pdf_content import extract_pdf_text
-from .store_workflow_result import store_workflow_result
+from .update_workflow import update_workflow
 
 REGISTERED_ACTIVITIES = [
     extract_pdf_text,
     extract_metadata_with_llm,
-    store_workflow_result,
+    update_workflow,
 ]
 
 __all__ = [
     "REGISTERED_ACTIVITIES",
     "extract_pdf_text",
     "extract_metadata_with_llm",
-    "store_workflow_result",
+    "update_workflow",
 ]

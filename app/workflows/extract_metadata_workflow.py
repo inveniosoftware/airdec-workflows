@@ -17,10 +17,7 @@ from app.activities.extract_pdf_content import (
     ExtractPdfContentRequest,
     extract_pdf_text,
 )
-from app.activities.store_workflow_result import (
-    WorkflowResultInput,
-    store_workflow_result,
-)
+from app.activities.update_workflow import WorkflowUpdateRequest, update_workflow
 from app.database.models import WorkflowStatus
 from app.schemas.metadata_suggestions import MetadataSuggestions
 from app.workflows.specs import (
@@ -49,6 +46,16 @@ class ExtractMetadata(PydanticAIWorkflow):
     ) -> MetadataSuggestions:
         """Execute the extraction + suggestions workflow."""
         try:
+            await workflow.execute_activity(
+                update_workflow,
+                WorkflowUpdateRequest(
+                    public_id=context.workflow_id,
+                    tenant_id=context.tenant_id,
+                    start_time=workflow.now(),
+                ),
+                start_to_close_timeout=timedelta(minutes=1),
+            )
+
             # Activity 1: Extract PDF text
             content = await workflow.execute_activity(
                 extract_pdf_text,
@@ -68,24 +75,26 @@ class ExtractMetadata(PydanticAIWorkflow):
             )
         except Exception:
             await workflow.execute_activity(
-                store_workflow_result,
-                WorkflowResultInput(
-                    workflow_id=context.workflow_id,
+                update_workflow,
+                WorkflowUpdateRequest(
+                    public_id=context.workflow_id,
                     tenant_id=context.tenant_id,
                     status=WorkflowStatus.ERROR,
                     result=None,
+                    end_time=workflow.now(),
                 ),
                 start_to_close_timeout=timedelta(minutes=1),
             )
             raise
 
         await workflow.execute_activity(
-            store_workflow_result,
-            WorkflowResultInput(
-                workflow_id=context.workflow_id,
+            update_workflow,
+            WorkflowUpdateRequest(
+                public_id=context.workflow_id,
                 tenant_id=context.tenant_id,
                 status=WorkflowStatus.SUCCESS,
                 result=result.model_dump(),
+                end_time=workflow.now(),
             ),
             start_to_close_timeout=timedelta(minutes=1),
         )
