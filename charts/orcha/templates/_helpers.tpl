@@ -22,6 +22,13 @@ Create a default fully qualified app name.
 {{- end }}
 
 {{/*
+Create the migration job name.
+*/}}
+{{- define "orcha.migrationJobName" -}}
+{{- printf "%s-migrations" (include "orcha.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "orcha.chart" -}}

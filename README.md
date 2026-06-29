@@ -25,7 +25,7 @@ uv run orcha services start
 ### 3. Apply database migrations
 
 ```bash
-uv run orcha init-db
+uv run orcha migrate
 ```
 
 ### 4. Start the application
@@ -160,7 +160,7 @@ export OLLAMA_BASE_URL="http://localhost:11434/v1"
 |------------------------------------|-------------------------------------------|
 | `orcha services start`             | Start PostgreSQL + Temporal via Docker    |
 | `orcha services stop`              | Stop all Docker services                  |
-| `orcha init-db`                    | Apply all database migrations             |
+| `orcha migrate`                    | Apply all database migrations             |
 | `orcha run`                        | Start server and default-queue worker     |
 | `orcha run server`                 | Start FastAPI dev server only             |
 | `orcha run workers`                | Start Temporal worker for default queue   |
@@ -174,7 +174,7 @@ The deployed schema is managed with Alembic. Apply committed migrations with:
 uv run alembic upgrade head
 ```
 
-For local setup, `uv run orcha init-db` is a convenience wrapper around the
+For local setup, `uv run orcha migrate` is a convenience wrapper around the
 same Alembic upgrade.
 
 See [Database Migrations](docs/migrations.md) for the full process of generating

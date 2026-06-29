@@ -7,6 +7,12 @@ image:
   pullPolicy: IfNotPresent
   tag: "" # Overrides the image tag whose default is the chart appVersion.
 
+migrations:
+  enabled: true
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 300
+  resources: {}
+
 serviceAccount:
   create: true
   annotations: {}

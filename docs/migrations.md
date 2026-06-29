@@ -20,7 +20,7 @@ uv run alembic upgrade head
 For local setup, the equivalent convenience command is:
 
 ```bash
-uv run orcha init-db
+uv run orcha migrate
 ```
 
 It runs the same Alembic upgrade to `head`; it does not call

@@ -164,6 +164,17 @@ helm upgrade --install orcha ./charts/orcha \
 
 ## Upgrading
 
+Database migrations are run automatically by a Helm hook Job when `migrations.enabled` is true.
+The Job runs `orcha migrate`, which applies Alembic migrations to the Orcha database.
+It runs on `post-install` and `pre-upgrade`.
+
+Disable automatic migrations with:
+
+```yaml
+migrations:
+  enabled: false
+```
+
 ```bash
 helm upgrade orcha ./charts/orcha \
   -f values-<env>.yaml \

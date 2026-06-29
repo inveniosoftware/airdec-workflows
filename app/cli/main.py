@@ -22,7 +22,7 @@ app.add_typer(run_app, name="run")
 
 
 @app.command()
-def init_db():
+def migrate():
     """Apply all database migrations."""
     command.upgrade(Config(PROJECT_ROOT / "alembic.ini"), "head")
     typer.echo("Database migrations applied successfully.")
