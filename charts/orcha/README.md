@@ -56,6 +56,15 @@ oc create secret generic orcha-llm-secret \
   -n <namespace>
 ```
 
+If Langfuse tracing is enabled:
+
+```bash
+oc create secret generic orcha-langfuse-secret \
+  --from-literal=publicKey='<your-public-key>' \
+  --from-literal=secretKey='<your-secret-key>' \
+  -n <namespace>
+```
+
 **2. Configure values**
 
 In your `values.yaml` override file:
@@ -66,6 +75,12 @@ secrets:
     existingSecret: "orcha-db-secret"
   llm:
     existingSecret: "orcha-llm-secret"  # Omit if not using an LLM API key
+  langfuse:
+    existingSecret: "orcha-langfuse-secret"  # Omit if Langfuse is disabled
+
+appConfig:
+  langfuseEnabled: "True"
+  langfuseBaseUrl: "https://cloud.langfuse.com"  # Optional for self-hosted/non-default endpoints
 ```
 
 ### Persistence Configuration

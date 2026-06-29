@@ -122,6 +122,17 @@ LLM Secret Name
 {{- end }}
 
 {{/*
+Langfuse Secret Name
+*/}}
+{{- define "orcha.langfuseSecretName" -}}
+{{- if .Values.secrets.langfuse.existingSecret }}
+{{- .Values.secrets.langfuse.existingSecret }}
+{{- else }}
+{{- "langfuse-secrets" }}
+{{- end }}
+{{- end }}
+
+{{/*
 Temporal Hostname
 */}}
 {{- define "orcha.temporalHost" -}}

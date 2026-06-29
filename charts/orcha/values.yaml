@@ -65,6 +65,11 @@ secrets:
     # If existingSecret is not provided, we will create a secret with these keys
     litellmApiKey: ""
     ollamaApiKey: ""
+  langfuse:
+    existingSecret: "" # e.g., my-langfuse-secret
+    # If existingSecret is not provided, we will create a secret with these keys
+    publicKey: ""
+    secretKey: ""
 
 # Temporal Subchart Configuration
 temporal:
@@ -209,6 +214,8 @@ appConfig:
   authDisabled: "False"
   tenantsConfigPath: "/data/tenants/tenants.json"
   allowedOrigins: '["http://localhost:3000","http://127.0.0.1:3000"]'
+  langfuseEnabled: "False"
+  langfuseBaseUrl: ""
 
 # LLM-specific configuration
 llmConfig:

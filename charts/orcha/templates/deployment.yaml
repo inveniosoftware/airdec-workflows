@@ -92,6 +92,22 @@ spec:
                   key: ollamaApiKey
                   optional: true
             {{- end }}
+            {{- if or .Values.secrets.langfuse.publicKey .Values.secrets.langfuse.existingSecret }}
+            - name: LANGFUSE_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orcha.langfuseSecretName" . }}
+                  key: publicKey
+                  optional: true
+            {{- end }}
+            {{- if or .Values.secrets.langfuse.secretKey .Values.secrets.langfuse.existingSecret }}
+            - name: LANGFUSE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orcha.langfuseSecretName" . }}
+                  key: secretKey
+                  optional: true
+            {{- end }}
           {{- if .Values.persistence.tenants.enabled }}
           volumeMounts:
             - name: tenants-config
