@@ -28,7 +28,7 @@ class Workflow(SQLModel, table=True):
     """Database model for a workflow execution."""
 
     id: int | None = Field(default=None, primary_key=True)
-    public_id: str = Field(default_factory=nanoid)
+    public_id: str = Field(default_factory=nanoid, unique=True)
     workflow_type: str
     params: dict = Field(default_factory=dict, sa_column=Column(JSON))
     status: WorkflowStatus
