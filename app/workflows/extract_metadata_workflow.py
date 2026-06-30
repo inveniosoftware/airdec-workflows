@@ -10,14 +10,20 @@ from pydantic_ai.durable_exec.temporal import (
 from temporalio import workflow
 
 from app.activities.extract_metadata import (
+    EXTRACT_METADATA_RETRY_POLICY,
     ExtractMetadataRequest,
     extract_metadata_with_llm,
 )
 from app.activities.extract_pdf_content import (
+    EXTRACT_PDF_TEXT_RETRY_POLICY,
     ExtractPdfContentRequest,
     extract_pdf_text,
 )
-from app.activities.update_workflow import WorkflowUpdateRequest, update_workflow
+from app.activities.update_workflow import (
+    UPDATE_WORKFLOW_RETRY_POLICY,
+    WorkflowUpdateRequest,
+    update_workflow,
+)
 from app.database.models import WorkflowStatus
 from app.schemas.metadata_suggestions import MetadataSuggestions
 from app.workflows.specs import (
@@ -54,6 +60,7 @@ class ExtractMetadata(PydanticAIWorkflow):
                     start_time=workflow.now(),
                 ),
                 start_to_close_timeout=timedelta(minutes=1),
+                retry_policy=UPDATE_WORKFLOW_RETRY_POLICY,
             )
 
             # Activity 1: Extract PDF text
@@ -65,6 +72,7 @@ class ExtractMetadata(PydanticAIWorkflow):
                     pages=params.pages,
                 ),
                 start_to_close_timeout=timedelta(minutes=5),
+                retry_policy=EXTRACT_PDF_TEXT_RETRY_POLICY,
             )
 
             # Activity 2: Generate metadata suggestions using LLM
@@ -72,6 +80,7 @@ class ExtractMetadata(PydanticAIWorkflow):
                 extract_metadata_with_llm,
                 ExtractMetadataRequest(text=content.text),
                 start_to_close_timeout=timedelta(minutes=5),
+                retry_policy=EXTRACT_METADATA_RETRY_POLICY,
             )
         except Exception:
             await workflow.execute_activity(
@@ -84,6 +93,7 @@ class ExtractMetadata(PydanticAIWorkflow):
                     end_time=workflow.now(),
                 ),
                 start_to_close_timeout=timedelta(minutes=1),
+                retry_policy=UPDATE_WORKFLOW_RETRY_POLICY,
             )
             raise
 
@@ -97,6 +107,7 @@ class ExtractMetadata(PydanticAIWorkflow):
                 end_time=workflow.now(),
             ),
             start_to_close_timeout=timedelta(minutes=1),
+            retry_policy=UPDATE_WORKFLOW_RETRY_POLICY,
         )
 
         return result

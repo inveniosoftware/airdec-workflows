@@ -1,13 +1,23 @@
 # SPDX-FileCopyrightText: 2026 CERN.
 # SPDX-License-Identifier: MIT
 
+from datetime import timedelta
+
 import httpx
 from pydantic import BaseModel
 from temporalio import activity
+from temporalio.common import RetryPolicy
 from temporalio.exceptions import ApplicationError
 
 from app.extractors import get_extractor
 from app.extractors.errors import InvalidPageSelectionError
+
+EXTRACT_PDF_TEXT_RETRY_POLICY = RetryPolicy(
+    initial_interval=timedelta(seconds=1),
+    backoff_coefficient=1.0,
+    maximum_interval=timedelta(seconds=1),
+    maximum_attempts=2,
+)
 
 
 class ExtractPdfContentRequest(BaseModel):

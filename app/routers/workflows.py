@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, select
 from temporalio.client import Client
+from temporalio.common import RetryPolicy
 
 from app.auth import AuthContext, decode_access_token
 from app.database.models import Workflow, WorkflowStatus
@@ -133,6 +134,7 @@ async def create(
             ],
             id=f"{spec.id_prefix}-{workflow_id}",
             task_queue=spec.task_queue,
+            retry_policy=RetryPolicy(maximum_attempts=1),
         )
     except Exception:
         logger.exception("Error starting Temporal workflow")

@@ -3,15 +3,25 @@
 
 """LLM-based metadata suggestions activity."""
 
+from datetime import timedelta
+
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, PromptedOutput
 from pydantic_ai.models.openai import OpenAIChatModel, OpenAIChatModelSettings
 from pydantic_ai.providers.litellm import LiteLLMProvider
 from pydantic_ai.providers.ollama import OllamaProvider
 from temporalio import activity
+from temporalio.common import RetryPolicy
 
 from app.config import get_settings
 from app.schemas.metadata_suggestions import ExtractedMetadata, MetadataSuggestions
+
+EXTRACT_METADATA_RETRY_POLICY = RetryPolicy(
+    initial_interval=timedelta(seconds=5),
+    backoff_coefficient=2,
+    maximum_interval=timedelta(seconds=20),
+    maximum_attempts=3,
+)
 
 
 def _parse_llm(llm: str) -> tuple[str, str]:
