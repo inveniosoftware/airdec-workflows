@@ -111,6 +111,25 @@ Database Secret Name
 {{- end }}
 
 {{/*
+Database connection env vars (PG*). Include with `nindent 12` under `env:`.
+*/}}
+{{- define "orcha.databaseEnv" -}}
+- name: PGUSER
+  value: {{ include "orcha.databaseUser" . | quote }}
+- name: PGPASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "orcha.dbSecretName" . }}
+      key: password
+- name: PGHOST
+  value: {{ include "orcha.databaseHost" . | quote }}
+- name: PGPORT
+  value: {{ include "orcha.databasePort" . | quote }}
+- name: PGDATABASE
+  value: {{ include "orcha.databaseName" . | quote }}
+{{- end }}
+
+{{/*
 LLM Secret Name
 */}}
 {{- define "orcha.llmSecretName" -}}
@@ -129,6 +148,28 @@ Langfuse Secret Name
 {{- .Values.secrets.langfuse.existingSecret }}
 {{- else }}
 {{- "langfuse-secrets" }}
+{{- end }}
+{{- end }}
+
+{{/*
+Langfuse credential env vars. Include with `nindent 12` under `env:`.
+*/}}
+{{- define "orcha.langfuseEnv" -}}
+{{- if or .Values.secrets.langfuse.publicKey .Values.secrets.langfuse.existingSecret }}
+- name: LANGFUSE_PUBLIC_KEY
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "orcha.langfuseSecretName" . }}
+      key: publicKey
+      optional: true
+{{- end }}
+{{- if or .Values.secrets.langfuse.secretKey .Values.secrets.langfuse.existingSecret }}
+- name: LANGFUSE_SECRET_KEY
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "orcha.langfuseSecretName" . }}
+      key: secretKey
+      optional: true
 {{- end }}
 {{- end }}
 
