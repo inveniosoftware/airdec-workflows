@@ -10,7 +10,6 @@ image:
 migrations:
   enabled: true
   backoffLimit: 3
-  ttlSecondsAfterFinished: 300
   resources: {}
 
 serviceAccount:

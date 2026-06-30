@@ -11,9 +11,6 @@ metadata:
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   backoffLimit: {{ .Values.migrations.backoffLimit }}
-  {{- with .Values.migrations.ttlSecondsAfterFinished }}
-  ttlSecondsAfterFinished: {{ . }}
-  {{- end }}
   template:
     metadata:
       labels:
