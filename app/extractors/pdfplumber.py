@@ -3,6 +3,7 @@
 
 """PDFPlumber-based PDF extractor."""
 
+import re
 from io import BytesIO
 from typing import Any, Dict, List, Optional
 
@@ -26,18 +27,20 @@ class PdfplumberExtractor(BaseExtractor):
         with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
             page_count = len(pdf.pages)
 
-            # Resolve page selection
             resolved_pages = resolve_pages(pages, page_count)
             page_indices = resolved_pages if resolved_pages else range(page_count)
 
             for page_num in page_indices:
                 page = pdf.pages[page_num]
-                # Extract text with x_tolerance=2 to better detect word boundaries
-                # Default x_tolerance=3 merges words like "PhilipBull" that have gaps
+                page_annots = page.annots or []
+                # x_tolerance=2: the default (3) merges spaced words like "PhilipBull"
                 text = page.extract_text(x_tolerance=2) or ""
+                # ORCIDs live only in link annotations. Splice each one next to its
+                # author so the pairing survives; a bare list misaligns when some
+                # authors have no ORCID.
+                text = self._inline_orcids(page, text, page_annots)
                 full_text_parts.append(text)
 
-                # Extract tables
                 page_tables = page.extract_tables()
                 for table in page_tables:
                     if table:
@@ -49,34 +52,21 @@ class PdfplumberExtractor(BaseExtractor):
                             }
                         )
 
-                # Extract hyperlinks (annotations with URI)
-                if page.annots:
-                    for annot in page.annots:
-                        uri = annot.get("uri")
-                        if uri:
-                            link_type = self._classify_link(uri)
-                            hyperlinks.append(
-                                {
-                                    "url": uri,
-                                    "page": page_num + 1,
-                                    "type": link_type,
-                                }
-                            )
+                for annot in page_annots:
+                    uri = annot.get("uri")
+                    if uri:
+                        link_type = self._classify_link(uri)
+                        hyperlinks.append(
+                            {
+                                "url": uri,
+                                "page": page_num + 1,
+                                "type": link_type,
+                            }
+                        )
 
-        # Page text already contains table cell text in reading order; the
-        # structured `tables` are returned in `extra` rather than flattened into
-        # `full_text`, which only duplicated content and added empty-cell noise.
+        # Tables go in `extra`, not `full_text`; the page text already holds each
+        # cell in reading order.
         full_text = "\n\n".join(full_text_parts)
-
-        # Extract ORCID IDs from hyperlinks and add to full_text
-        # This makes ORCIDs discoverable even when they're only in link URLs
-        # (not visible text)
-        orcid_ids = [
-            self._extract_orcid_id(h["url"]) for h in hyperlinks if h["type"] == "orcid"
-        ]
-        orcid_ids = [oid for oid in orcid_ids if oid]  # filter None
-        if orcid_ids:
-            full_text += "\n\nORCID IDs from hyperlinks: " + " ".join(orcid_ids)
 
         return {
             "full_text": full_text,
@@ -92,9 +82,34 @@ class PdfplumberExtractor(BaseExtractor):
             },
         }
 
+    def _inline_orcids(self, page, text: str, annots: list) -> str:
+        """Splice each ORCID inline after the author its icon is anchored to.
+
+        The icon sits just right of the author on the same line, so the word
+        ending nearest left of it is that author's token (name plus any
+        affiliation marker, e.g. "Bull1,2"). The first text match is the author
+        block near the top of the page.
+        """
+        words = None
+        for annot in annots:
+            orcid = self._extract_orcid_id(annot.get("uri") or "")
+            if not orcid:
+                continue
+            if words is None:
+                words = page.extract_words(x_tolerance=2)
+            on_line = [
+                w
+                for w in words
+                if abs(w["top"] - annot["top"]) < 6 and w["x1"] <= annot["x0"] + 2
+            ]
+            if not on_line:
+                continue
+            anchor = max(on_line, key=lambda w: w["x1"])["text"].strip(" ,;")
+            if anchor and anchor in text:
+                text = text.replace(anchor, f"{anchor} (ORCID: {orcid})", 1)
+        return text
+
     def _extract_orcid_id(self, url: str) -> str | None:
         """Extract ORCID ID from an orcid.org URL."""
-        import re
-
         match = re.search(r"orcid\.org/(\d{4}-\d{4}-\d{4}-\d{3}[\dX])", url)
         return match.group(1) if match else None
