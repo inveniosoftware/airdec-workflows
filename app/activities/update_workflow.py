@@ -11,11 +11,13 @@ from typing import Any
 from pydantic import BaseModel
 from sqlmodel import Session, select
 from temporalio import activity
+from temporalio.common import RetryPolicy
 
 from app.database.models import Workflow, WorkflowStatus
 from app.database.session import get_session
 
 WORKFLOW_IDENTITY_FIELDS = {"id", "public_id", "tenant_id"}
+UPDATE_WORKFLOW_RETRY_POLICY = RetryPolicy(maximum_attempts=1)
 
 
 class WorkflowUpdateRequest(BaseModel):
