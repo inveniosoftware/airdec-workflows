@@ -5,7 +5,7 @@ metadata:
   labels:
     {{- include "orcha.labels" . | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.worker.replicaCount }}
   selector:
     matchLabels:
       {{- include "orcha.selectorLabels" . | nindent 6 }}-worker
