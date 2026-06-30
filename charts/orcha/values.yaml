@@ -222,3 +222,6 @@ llmConfig:
   llmModel: ""  # Defaults to the app's built-in default if not set
   litellmApiBase: "<litellm-endpoint>"
   ollamaBaseUrl: "http://localhost:11434/v1"
+
+worker:
+  replicaCount: 1
