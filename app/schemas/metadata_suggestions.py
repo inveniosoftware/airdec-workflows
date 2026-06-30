@@ -5,9 +5,29 @@
 
 # from __future__ import annotations
 
+import re
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, field_validator
+
+_ORCID_RE = re.compile(r"\d{4}-\d{4}-\d{4}-\d{3}[\dX]")
+
+
+def valid_orcid(value: str) -> bool:
+    """Check ORCID shape and ISO 7064 MOD 11-2 check digit.
+
+    Rejects fabrications like ``0000-0000-0000-0000`` (wrong check digit) that
+    the LLM emits for authors with no ORCID, as well as digit-garbled IDs.
+    """
+    value = value.strip()
+    if not _ORCID_RE.fullmatch(value):
+        return False
+    digits = value.replace("-", "")
+    total = 0
+    for ch in digits[:15]:
+        total = (total + int(ch)) * 2
+    check = (12 - total % 11) % 11
+    return ("X" if check == 10 else str(check)) == digits[15]
 
 
 class Creator(BaseModel):
@@ -28,7 +48,7 @@ class Creator(BaseModel):
             "ORCID identifier as the bare 16-digit ID (four groups of four, "
             "final character may be 'X'), without the orcid.org URL prefix"
         ),
-        examples=["0000-0001-2345-6789", "0000-0002-1234-567X"],
+        examples=["0000-0001-2345-6789", "0000-0001-0002-000X"],
     )
 
     @field_validator("name")
@@ -179,14 +199,19 @@ class ExtractedMetadata(BaseModel):
         if self.description:
             suggestions.append(DescriptionSuggestion(value=self.description))
         if self.creators:
-            value = [
-                Creator(
-                    name=name,
-                    orcid=self._at(self.creator_orcids, i) or None,
-                    affiliation=self._at(self.creator_affiliations, i) or None,
+            value = []
+            for i, name in enumerate(self.creators):
+                # Drop ORCIDs that fail the check digit here, in post-processing,
+                # not on the LLM output schema: a schema error would be fed back
+                # and the model would invent a checksum-valid fake to satisfy it.
+                orcid = self._at(self.creator_orcids, i)
+                value.append(
+                    Creator(
+                        name=name,
+                        orcid=orcid if valid_orcid(orcid) else None,
+                        affiliation=self._at(self.creator_affiliations, i) or None,
+                    )
                 )
-                for i, name in enumerate(self.creators)
-            ]
             creators = CreatorsSuggestion(value=value)
             if creators.value:
                 suggestions.append(creators)
