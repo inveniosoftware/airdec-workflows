@@ -15,10 +15,21 @@ class Creator(BaseModel):
 
     name: str = Field(
         description="Full name in '<family>, <given>' format",
-        examples=["Smith, John"],
+        examples=["Doe, Jane", "van der Berg, A."],
     )
-    affiliation: str | None = None
-    orcid: str | None = None
+    affiliation: str | None = Field(
+        default=None,
+        description="Institution or organization the creator is affiliated with",
+        examples=["CERN", "University of Cambridge"],
+    )
+    orcid: str | None = Field(
+        default=None,
+        description=(
+            "ORCID identifier as the bare 16-digit ID (four groups of four, "
+            "final character may be 'X'), without the orcid.org URL prefix"
+        ),
+        examples=["0000-0001-2345-6789", "0000-0002-1234-567X"],
+    )
 
     @field_validator("name")
     @classmethod
@@ -101,17 +112,50 @@ class MetadataSuggestions(BaseModel):
 
 
 class ExtractedMetadata(BaseModel):
-    """Flat schema the LLM fills; converted to ``MetadataSuggestions``.
+    """Flat schema the LLM fills, converted to ``MetadataSuggestions``.
 
-    Smaller models handle a flat object far better than the discriminated union.
+    Creators are parallel lists, not nested objects. gpt-oss-20b fills flat
+    top-level lists in a tool call but drops a field nested under each creator,
+    so a per-creator ``orcid`` gets lost. ``creator_orcids[i]`` and
+    ``creator_affiliations[i]`` belong to ``creators[i]``.
     """
 
-    title: str | None = Field(default=None, description="Document title")
-    description: str | None = Field(default=None, description="Abstract or summary")
-    creators: list[Creator] = Field(
-        default_factory=list, description="Authors or creators"
+    title: str | None = Field(
+        default=None,
+        description="Document title",
+        examples=["A Concise Title Describing the Work"],
     )
-    doi: str | None = Field(default=None, description="The Digital Object Identifier")
+    description: str | None = Field(
+        default=None,
+        description="Abstract or summary",
+        examples=["A short summary of the document's purpose, methods, and findings."],
+    )
+    creators: list[str] = Field(
+        default_factory=list,
+        description="Creator full names in '<family>, <given>' format, in order",
+        examples=[["Doe, Jane", "van der Berg, A."]],
+    )
+    creator_orcids: list[str] = Field(
+        default_factory=list,
+        description=(
+            "ORCID iD per creator, parallel to `creators` so creator_orcids[i] "
+            "is the ORCID of creators[i]; empty string when an author has none. "
+            "Bare 16-digit form (four groups of four, last may be 'X'), no URL."
+        ),
+        examples=[["0000-0001-2345-6789", ""]],
+    )
+    creator_affiliations: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Affiliation per creator, parallel to `creators`; empty string when unknown"
+        ),
+        examples=[["CERN", "University of Cambridge"]],
+    )
+    doi: str | None = Field(
+        default=None,
+        description="The Digital Object Identifier, as a bare DOI without a URL prefix",
+        examples=["10.1234/example.5678"],
+    )
     publication_date: str | None = Field(
         default=None,
         description=(
@@ -122,6 +166,11 @@ class ExtractedMetadata(BaseModel):
         examples=["2014-07-17", "2014-07", "2014"],
     )
 
+    @staticmethod
+    def _at(values: list[str], i: int) -> str:
+        """Return the i-th parallel value, or '' when the list is shorter."""
+        return values[i] if i < len(values) else ""
+
     def to_suggestions(self) -> MetadataSuggestions:
         """Build the typed suggestions, dropping null/empty fields."""
         suggestions: list[MetadataSuggestion] = []
@@ -130,7 +179,15 @@ class ExtractedMetadata(BaseModel):
         if self.description:
             suggestions.append(DescriptionSuggestion(value=self.description))
         if self.creators:
-            creators = CreatorsSuggestion(value=self.creators)
+            value = [
+                Creator(
+                    name=name,
+                    orcid=self._at(self.creator_orcids, i) or None,
+                    affiliation=self._at(self.creator_affiliations, i) or None,
+                )
+                for i, name in enumerate(self.creators)
+            ]
+            creators = CreatorsSuggestion(value=value)
             if creators.value:
                 suggestions.append(creators)
         if self.doi:
