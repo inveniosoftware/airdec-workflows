@@ -87,10 +87,11 @@ class PdfplumberExtractor(BaseExtractor):
 
         The icon sits just right of the author on the same line, so the word
         ending nearest left of it is that author's token (name plus any
-        affiliation marker, e.g. "Bull1,2"). The first text match is the author
-        block near the top of the page.
+        affiliation marker, e.g. "Smith1,2"). Edits are collected and applied in
+        a single pass.
         """
         words = None
+        edits: list[tuple[int, str]] = []
         for annot in annots:
             orcid = self._extract_orcid_id(annot.get("uri") or "")
             if not orcid:
@@ -98,16 +99,32 @@ class PdfplumberExtractor(BaseExtractor):
             if words is None:
                 words = page.extract_words(x_tolerance=2)
             on_line = [
-                w
-                for w in words
+                i
+                for i, w in enumerate(words)
                 if abs(w["top"] - annot["top"]) < 6 and w["x1"] <= annot["x0"] + 2
             ]
             if not on_line:
                 continue
-            anchor = max(on_line, key=lambda w: w["x1"])["text"].strip(" ,;")
-            if anchor and anchor in text:
-                text = text.replace(anchor, f"{anchor} (ORCID: {orcid})", 1)
-        return text
+            idx = max(on_line, key=lambda i: words[i]["x1"])
+            anchor = words[idx]["text"]
+            # Match the anchor as a whole whitespace-bounded token at its own
+            # occurrence, so a prefix like "Alex" can't land inside "Alexandra"
+            # and marker-suffixed tokens (e.g. "Smith1,2") still match.
+            ordinal = sum(1 for w in words[:idx] if w["text"] == anchor)
+            occ = list(re.finditer(rf"(?<!\S){re.escape(anchor)}(?!\S)", text))
+            if ordinal < len(occ):
+                edits.append((occ[ordinal].end(), orcid))
+
+        if not edits:
+            return text
+        edits.sort()
+        parts, prev = [], 0
+        for offset, orcid in edits:
+            parts.append(text[prev:offset])
+            parts.append(f" (ORCID: {orcid})")
+            prev = offset
+        parts.append(text[prev:])
+        return "".join(parts)
 
     def _extract_orcid_id(self, url: str) -> str | None:
         """Extract ORCID ID from an orcid.org URL."""
