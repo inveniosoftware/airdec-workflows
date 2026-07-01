@@ -5,29 +5,11 @@
 
 # from __future__ import annotations
 
-import re
 from typing import Annotated, Literal
 
+from idutils.normalizers import normalize_orcid
+from idutils.validators import is_orcid
 from pydantic import BaseModel, Field, field_validator
-
-_ORCID_RE = re.compile(r"\d{4}-\d{4}-\d{4}-\d{3}[\dX]")
-
-
-def valid_orcid(value: str) -> bool:
-    """Check ORCID shape and ISO 7064 MOD 11-2 check digit.
-
-    Rejects fabrications like ``0000-0000-0000-0000`` (wrong check digit) that
-    the LLM emits for authors with no ORCID, as well as digit-garbled IDs.
-    """
-    value = value.strip()
-    if not _ORCID_RE.fullmatch(value):
-        return False
-    digits = value.replace("-", "")
-    total = 0
-    for ch in digits[:15]:
-        total = (total + int(ch)) * 2
-    check = (12 - total % 11) % 11
-    return ("X" if check == 10 else str(check)) == digits[15]
 
 
 class Creator(BaseModel):
@@ -48,7 +30,7 @@ class Creator(BaseModel):
             "ORCID identifier as the bare 16-digit ID (four groups of four, "
             "final character may be 'X'), without the orcid.org URL prefix"
         ),
-        examples=["0000-0001-2345-6789", "0000-0001-0002-000X"],
+        examples=["0000-0002-1111-1115", "0000-0002-6789-012X"],
     )
 
     @field_validator("name")
@@ -162,7 +144,7 @@ class ExtractedMetadata(BaseModel):
             "is the ORCID of creators[i]; empty string when an author has none. "
             "Bare 16-digit form (four groups of four, last may be 'X'), no URL."
         ),
-        examples=[["0000-0001-2345-6789", ""]],
+        examples=[["0000-0002-1111-1115", ""]],
     )
     creator_affiliations: list[str] = Field(
         default_factory=list,
@@ -201,14 +183,14 @@ class ExtractedMetadata(BaseModel):
         if self.creators:
             value = []
             for i, name in enumerate(self.creators):
-                # Drop ORCIDs that fail the check digit here, in post-processing,
-                # not on the LLM output schema: a schema error would be fed back
-                # and the model would invent a checksum-valid fake to satisfy it.
+                # Validate/normalize here, not on the LLM output schema, where a
+                # fed-back error would make the model invent a valid-looking fake.
                 orcid = self._at(self.creator_orcids, i)
+                orcid = normalize_orcid(orcid).upper() if is_orcid(orcid) else None
                 value.append(
                     Creator(
                         name=name,
-                        orcid=orcid if valid_orcid(orcid) else None,
+                        orcid=orcid,
                         affiliation=self._at(self.creator_affiliations, i) or None,
                     )
                 )

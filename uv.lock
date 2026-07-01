@@ -999,6 +999,18 @@ wheels = [
 ]
 
 [[package]]
+name = "idutils"
+version = "1.6.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "isbnlib2" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/23/1b/8d35c02739e1bcf53c23107324f56565e42ab87e53d3cb82322368a024ec/idutils-1.6.1.tar.gz", hash = "sha256:4604827ed52aa272843f1c53b25ed3be864868a9abcdf0ee7932df56f94458b8", size = 35853, upload-time = "2026-05-28T08:54:17.464Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7b/9c/aa092c1daaac95ba6b19d9d2f0542a27692c11ec4e3175f6f98e08d49681/idutils-1.6.1-py2.py3-none-any.whl", hash = "sha256:de24b0f5d9317052223819a99893f913d752820c3d7046d3a4e970b1221e0723", size = 23814, upload-time = "2026-05-28T08:54:16.43Z" },
+]
+
+[[package]]
 name = "importlib-metadata"
 version = "8.7.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1017,6 +1029,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/72/34/14ca021ce8e5dfedc35312d08ba8bf51fdd999c576889fc2c24cb97f4f10/iniconfig-2.3.0.tar.gz", hash = "sha256:c76315c77db068650d49c5b56314774a7804df16fee4402c1f19d6d15d8c4730", size = 20503, upload-time = "2025-10-18T21:55:43.219Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cb/b1/3846dd7f199d53cb17f49cba7e651e9ce294d8497c8c150530ed11865bb8/iniconfig-2.3.0-py3-none-any.whl", hash = "sha256:f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12", size = 7484, upload-time = "2025-10-18T21:55:41.639Z" },
+]
+
+[[package]]
+name = "isbnlib2"
+version = "3.11.19"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d4/9d/18f104b965db7ee0ac5543d2c6c39cd44b6f4f016484cd57a0b56c1f15c5/isbnlib2-3.11.19.tar.gz", hash = "sha256:37c2833b6feb6b05abfc028134149dffc813def244cd1bdc251ab3a3fabe08dd", size = 56888, upload-time = "2026-06-14T11:13:59.807Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/58/af/bce0a35779136f2301e8442e62094890da8d36504d0ab71b370bfc3631ac/isbnlib2-3.11.19-py3-none-any.whl", hash = "sha256:fec59123b56c4b71ff70ccdfa898a3df2c38618642b2d73650318a7a0b565ec1", size = 67860, upload-time = "2026-06-14T11:13:58.185Z" },
 ]
 
 [[package]]
@@ -1612,6 +1633,7 @@ dependencies = [
     { name = "fastapi", extra = ["standard"] },
     { name = "fastapi-limiter" },
     { name = "httpx" },
+    { name = "idutils" },
     { name = "nanoid" },
     { name = "pdfplumber" },
     { name = "psycopg", extra = ["binary"] },
@@ -1643,6 +1665,7 @@ requires-dist = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.136.1" },
     { name = "fastapi-limiter", specifier = ">=0.2.0" },
     { name = "httpx", specifier = ">=0.28.1" },
+    { name = "idutils", specifier = ">=1.6.1" },
     { name = "nanoid", specifier = ">=2.0.0" },
     { name = "pdfplumber", specifier = ">=0.11.9" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.4" },
