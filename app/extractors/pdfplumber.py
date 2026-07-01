@@ -7,6 +7,9 @@ import re
 from io import BytesIO
 from typing import Any, Dict, List, Optional
 
+from idutils.normalizers import normalize_orcid
+from idutils.validators import is_orcid
+
 from .base import BaseExtractor
 from .utils import resolve_pages
 
@@ -134,6 +137,5 @@ class PdfplumberExtractor(BaseExtractor):
         return "".join(parts)
 
     def _extract_orcid_id(self, url: str) -> str | None:
-        """Extract ORCID ID from an orcid.org URL."""
-        match = re.search(r"orcid\.org/(\d{4}-\d{4}-\d{4}-\d{3}[\dX])", url)
-        return match.group(1) if match else None
+        """Return the bare ORCID from an orcid.org URL, or None."""
+        return normalize_orcid(url) if is_orcid(url) else None
