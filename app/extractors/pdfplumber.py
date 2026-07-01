@@ -10,6 +10,12 @@ from typing import Any, Dict, List, Optional
 from .base import BaseExtractor
 from .utils import resolve_pages
 
+# Tolerances in PDF points for tying an ORCID icon to its author's name: the
+# icon sits on the name's text line, just past its right edge. Empirical, tuned
+# on the sample papers.
+_SAME_LINE_PT = 6  # max vertical gap counting word and icon as one line
+_ICON_GAP_PT = 2  # max horizontal gap from the word's right edge to the icon
+
 
 class PdfplumberExtractor(BaseExtractor):
     """Extract content using pdfplumber."""
@@ -101,7 +107,8 @@ class PdfplumberExtractor(BaseExtractor):
             on_line = [
                 i
                 for i, w in enumerate(words)
-                if abs(w["top"] - annot["top"]) < 6 and w["x1"] <= annot["x0"] + 2
+                if abs(w["top"] - annot["top"]) < _SAME_LINE_PT
+                and w["x1"] <= annot["x0"] + _ICON_GAP_PT
             ]
             if not on_line:
                 continue
