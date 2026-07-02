@@ -33,7 +33,7 @@ def propagate_langfuse_context(
     from langfuse import propagate_attributes
 
     with propagate_attributes(
-        user_id=context.user_id or context.tenant_id,
+        user_id=context.user_id,
         session_id=context.workflow_id,
         trace_name=trace_name,
         metadata=_langfuse_metadata(context),
