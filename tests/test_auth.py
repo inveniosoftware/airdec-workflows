@@ -443,7 +443,7 @@ def test_create_workflow_requires_auth(client):
 
 
 def test_create_workflow_stamps_tenant_id(client, db_session, mocker):
-    """POST /workflows/ stamps the tenant_id from the auth context."""
+    """POST /workflows/ stamps tenant context and request user context."""
     token = generate_test_token()
 
     # Mock the temporal client to avoid real connection
@@ -454,6 +454,7 @@ def test_create_workflow_stamps_tenant_id(client, db_session, mocker):
         "/workflows/",
         json={
             "workflow_type": "extract_metadata",
+            "user_id": "user-123",
             "params": {"url": "https://example.com/doc.pdf"},
         },
         headers={"Authorization": f"Bearer {token}"},
@@ -465,6 +466,7 @@ def test_create_workflow_stamps_tenant_id(client, db_session, mocker):
     wf = db_session.get(Workflow, 1)
     assert wf is not None
     assert wf.tenant_id == "tenant-a"
+    assert wf.user_id == "user-123"
     assert wf.workflow_type == "extract_metadata"
     assert wf.params == {
         "url": "https://example.com/doc.pdf",
@@ -472,6 +474,7 @@ def test_create_workflow_stamps_tenant_id(client, db_session, mocker):
         "pages": [1, 2],
     }
     assert wf.public_id == created_id
+    assert response.json()["user_id"] == "user-123"
 
     mock_temporal.start_workflow.assert_awaited_once()
     workflow_context, workflow_params = mock_temporal.start_workflow.await_args.kwargs[
@@ -479,6 +482,7 @@ def test_create_workflow_stamps_tenant_id(client, db_session, mocker):
     ]
     assert workflow_context.workflow_id == created_id
     assert workflow_context.tenant_id == "tenant-a"
+    assert workflow_context.user_id == "user-123"
     assert str(workflow_params.url) == "https://example.com/doc.pdf"
 
 

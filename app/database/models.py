@@ -33,6 +33,7 @@ class Workflow(SQLModel, table=True):
     params: dict = Field(default_factory=dict, sa_column=Column(JSON))
     status: WorkflowStatus
     tenant_id: str
+    user_id: str | None = None
     result: dict | None = Field(default=None, sa_column=Column(JSON))
     created: datetime = Field(
         default_factory=lambda: datetime.now(UTC),

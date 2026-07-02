@@ -10,11 +10,12 @@ from app.config import get_settings
 from app.workflows.specs import WorkflowContext
 
 
-def _langfuse_metadata(context: WorkflowContext) -> dict[str, str]:
+def _langfuse_metadata(context: WorkflowContext) -> dict[str, str | None]:
     """Build Langfuse metadata from workflow context."""
     return {
         "workflowId": context.workflow_id,
         "tenantId": context.tenant_id,
+        "userId": context.user_id,
     }
 
 
@@ -32,7 +33,7 @@ def propagate_langfuse_context(
     from langfuse import propagate_attributes
 
     with propagate_attributes(
-        user_id=context.tenant_id,
+        user_id=context.user_id or context.tenant_id,
         session_id=context.workflow_id,
         trace_name=trace_name,
         metadata=_langfuse_metadata(context),

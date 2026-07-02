@@ -39,6 +39,7 @@ class CreateWorkflowRequest(BaseModel):
 
     workflow_type: str
     params: dict[str, Any] = Field(default_factory=dict)
+    user_id: str | None = None
 
 
 def _get_temporal_client(request: Request) -> Client:
@@ -111,6 +112,7 @@ async def create(
         status=WorkflowStatus.PROCESSING,
         params=params.model_dump(mode="json"),
         tenant_id=auth.tenant_id,
+        user_id=body.user_id,
     )
 
     try:
@@ -129,6 +131,7 @@ async def create(
                 WorkflowContext(
                     workflow_id=workflow_id,
                     tenant_id=auth.tenant_id,
+                    user_id=workflow.user_id,
                 ),
                 params,
             ],

@@ -16,6 +16,7 @@ class WorkflowContext(BaseModel):
 
     workflow_id: str
     tenant_id: str
+    user_id: str | None = None
 
 
 class WorkflowParams(BaseModel):
