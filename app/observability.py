@@ -6,6 +6,7 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
 
+from app.config import get_settings
 from app.workflows.specs import WorkflowContext
 
 
@@ -24,6 +25,10 @@ def propagate_langfuse_context(
     trace_name: str,
 ) -> Iterator[None]:
     """Propagate workflow context to Langfuse at activity runtime."""
+    if not get_settings().langfuse_enabled:
+        yield
+        return
+
     from langfuse import propagate_attributes
 
     with propagate_attributes(

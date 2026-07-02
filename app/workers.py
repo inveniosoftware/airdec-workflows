@@ -4,7 +4,6 @@
 import argparse
 import asyncio
 
-from langfuse import Langfuse
 from pydantic_ai import Agent
 from pydantic_ai.durable_exec.temporal import PydanticAIPlugin
 from temporalio.client import Client
@@ -31,11 +30,18 @@ async def _run_worker(
     await worker.run()
 
 
-def _configure_langfuse_client(settings: Settings) -> Langfuse | None:
+def _configure_langfuse_client(settings: Settings):
     """Create the Langfuse client when tracing is enabled."""
     if not settings.langfuse_enabled:
         Agent.instrument_all(False)
         return None
+
+    try:
+        from langfuse import Langfuse
+    except ModuleNotFoundError as exc:
+        raise RuntimeError(
+            "Langfuse tracing requires the optional 'langfuse' dependency."
+        ) from exc
 
     if not settings.langfuse_public_key or not settings.langfuse_secret_key:
         raise ValueError(
