@@ -1666,7 +1666,6 @@ dependencies = [
     { name = "fastapi-limiter" },
     { name = "httpx" },
     { name = "idutils" },
-    { name = "langfuse" },
     { name = "nanoid" },
     { name = "pdfplumber" },
     { name = "psycopg", extra = ["binary"] },
@@ -1680,6 +1679,11 @@ dependencies = [
     { name = "sqlmodel" },
     { name = "temporalio" },
     { name = "typer" },
+]
+
+[package.optional-dependencies]
+langfuse = [
+    { name = "langfuse" },
 ]
 
 [package.dev-dependencies]
@@ -1699,7 +1703,7 @@ requires-dist = [
     { name = "fastapi-limiter", specifier = ">=0.2.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "idutils", specifier = ">=1.6.1" },
-    { name = "langfuse", specifier = ">=4.7.0" },
+    { name = "langfuse", marker = "extra == 'langfuse'", specifier = ">=4.7.0" },
     { name = "nanoid", specifier = ">=2.0.0" },
     { name = "pdfplumber", specifier = ">=0.11.9" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.4" },
@@ -1714,6 +1718,7 @@ requires-dist = [
     { name = "temporalio", specifier = ">=1.27.0" },
     { name = "typer", specifier = ">=0.25.1" },
 ]
+provides-extras = ["langfuse"]
 
 [package.metadata.requires-dev]
 dev = [
