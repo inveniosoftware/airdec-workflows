@@ -11,7 +11,7 @@ COPY . /app
 
 # Install the application dependencies.
 WORKDIR /app
-RUN uv sync --locked --no-cache
+RUN uv sync --locked --no-cache --extra langfuse
 
 # Run the application.
 CMD ["/app/.venv/bin/fastapi", "run", "app/main.py", "--port", "8000"]
