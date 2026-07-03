@@ -83,6 +83,8 @@ appConfig:
   langfuseBaseUrl: "https://cloud.langfuse.com"  # Optional for self-hosted/non-default endpoints
 ```
 
+> Langfuse is an optional feature and is disabled by default. The configuration above enables it.
+
 ### Persistence Configuration
 
 **Option A: Bundled PostgreSQL (default)**
@@ -140,6 +142,44 @@ route:
     host: "orcha-temporal.<apps-domain>"
 ```
 
+### Authentication and Tenants
+
+For more information on how authentication is set up for Orcha, visit our [README section on it](https://github.com/inveniosoftware/orcha#authentication).
+
+:::info
+By default, auth is enabled in Orcha.
+:::
+
+For deployment, we handle the tenants file via a Permanent Volume Claim, which requires writing or copying the `tenants.json` file to the path mounting the PVC.
+
+For example, to copy the file from your local machine:
+```bash
+oc cp ./tenants.json <namespace>/<pod-name>:/data/tenants/tenants.json
+```
+
+Since the Tenant registry is loaded once at startup and cached, we need to restart the deployment:
+
+```bash
+oc rollout restart deployment/<deployment> -n <namespace>
+```
+
+Once that is done, the file only needs to be touched again if we need to add/update/remove tenants. Otherwise, the PVC persists independently of the pod lifecycle.
+
+### Temporal namespaces
+The first time we deploy Temporal, no namespace exists within the application. To create it:
+
+1. Find the temporal admintools by running `oc get deployments`
+2. Exec into it with bash:
+
+```bash
+oc exec -it deployment/<admintools-deployment> -- /bin/bash
+```
+
+3. Use the temporal CLI to create a namespace
+```bash
+temporal operator namespace create -n <namespace>
+```
+
 ---
 
 ## Multiple instances (e.g. sandbox + prod)
@@ -195,6 +235,9 @@ helm upgrade orcha ./charts/orcha \
   -f values-<env>.yaml \
   -n <namespace>
 ```
+
+> This will work as expected if your values-<env>.yaml file is up-to-date with the release history. If not,
+> consider using the flag `--reset-then-reuse-values` as detailed in the [Helm Upgrade docs](https://helm.sh/docs/helm/helm_upgrade/).
 
 ---
 
