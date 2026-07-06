@@ -20,6 +20,7 @@ from app.auth import AuthContext, decode_access_token
 from app.database.models import Workflow, WorkflowStatus
 from app.database.session import get_db_session
 from app.dependencies import get_current_user
+from app.services.workflows import WorkflowService
 from app.workflows.registry import get_workflow_spec
 from app.workflows.specs import WorkflowContext
 
@@ -46,29 +47,6 @@ def _get_temporal_client(request: Request) -> Client:
     return request.app.state.temporal_client
 
 
-def verify_workflow_access(auth: AuthContext, workflow_id: str) -> None:
-    """Verify that the JWT payload allows access to the requested workflow."""
-    if auth.workflow_id and auth.workflow_id != "*" and auth.workflow_id != workflow_id:
-        raise HTTPException(status_code=403, detail="Not authorized for this workflow")
-
-
-def verify_tenant_owns_workflow(auth: AuthContext, workflow: Workflow) -> None:
-    """Verify the authenticated tenant owns the workflow.
-
-    Args:
-        auth: The authenticated request context.
-        workflow: The workflow database record.
-
-    Raises:
-        HTTPException: 403 if the tenant does not own the workflow.
-    """
-    if workflow.tenant_id != auth.tenant_id:
-        raise HTTPException(
-            status_code=403,
-            detail="Not authorized to access this workflow",
-        )
-
-
 @router.get(
     "/",
     response_model=list[Workflow],
@@ -79,10 +57,7 @@ async def read_all(
     session: Session = Depends(get_db_session),
 ):
     """List all workflows for the authenticated tenant."""
-    workflows = session.exec(
-        select(Workflow).where(Workflow.tenant_id == auth.tenant_id)
-    ).all()
-    return workflows
+    return WorkflowService(session).list_for_tenant(auth.tenant_id)
 
 
 @router.post(
@@ -163,18 +138,7 @@ async def read(
     session: Session = Depends(get_db_session),
 ):
     """Get a single workflow by its public ID."""
-    verify_workflow_access(auth, workflow_id)
-
-    try:
-        workflow = session.exec(
-            select(Workflow).where(Workflow.public_id == workflow_id)
-        ).one()
-    except SQLAlchemyError:
-        logger.exception("Error reading workflow")
-        raise HTTPException(status_code=404, detail="Workflow not found")
-
-    verify_tenant_owns_workflow(auth, workflow)
-    return workflow
+    return WorkflowService(session).get_authorized_workflow(auth, workflow_id)
 
 
 async def workflow_event(request: Request, workflow_id: str):
@@ -225,17 +189,7 @@ async def stream(
     registry = get_tenant_registry(request)
     auth = decode_access_token(token, registry)
 
-    verify_workflow_access(auth, workflow_id)
-
-    # Verify tenant owns the workflow before streaming
-    try:
-        workflow = session.exec(
-            select(Workflow).where(Workflow.public_id == workflow_id)
-        ).one()
-    except SQLAlchemyError:
-        raise HTTPException(status_code=404, detail="Workflow not found")
-
-    verify_tenant_owns_workflow(auth, workflow)
+    WorkflowService(session).get_authorized_workflow(auth, workflow_id)
 
     return StreamingResponse(
         workflow_event(request, workflow_id), media_type="text/event-stream"
