@@ -5,6 +5,10 @@
 
 from __future__ import annotations
 
+from app.workflows.check_funding_relevance_workflow import (
+    CheckFundingRelevance,
+    CheckFundingRelevanceParams,
+)
 from app.workflows.extract_metadata_workflow import (
     ExtractMetadata,
     ExtractMetadataParams,
@@ -18,6 +22,12 @@ WORKFLOW_REGISTRY: dict[str, WorkflowSpec] = {
         params_model=ExtractMetadataParams,
         task_queue=DEFAULT_TASK_QUEUE,
         id_prefix="extract-metadata",
+    ),
+    "check_funding_relevance": WorkflowSpec(
+        workflow_cls=CheckFundingRelevance,
+        params_model=CheckFundingRelevanceParams,
+        task_queue=DEFAULT_TASK_QUEUE,
+        id_prefix="check-funding-relevance",
     ),
 }
 
