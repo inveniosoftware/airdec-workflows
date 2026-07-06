@@ -149,9 +149,15 @@ class ExtractedMetadata(BaseModel):
     creator_affiliations: list[str] = Field(
         default_factory=list,
         description=(
-            "Affiliation per creator, parallel to `creators`; empty string when unknown"
+            "Affiliation per creator, parallel to `creators`; empty string when "
+            "unknown. Affiliations are often marked with numbers or symbols after "
+            "author names; resolve each author's marker to its affiliation. Copy "
+            "the affiliation as written, including any department or institute, "
+            "but leave out the marker and any street address, city, postal code, "
+            "or country: 'CERN, Geneva, Switzerland' -> 'CERN'. If an author has "
+            "several affiliations, give the first."
         ),
-        examples=[["CERN", "University of Cambridge"]],
+        examples=[["CERN", "Department of Physics, University of Oxford"]],
     )
     doi: str | None = Field(
         default=None,
