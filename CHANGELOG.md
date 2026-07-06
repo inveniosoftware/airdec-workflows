@@ -3,9 +3,44 @@
 ## [Unreleased]
 
 ### Features
+- *(extract)* Reduce fabricated metadata suggestions
+  - Tell the model to leave absent fields empty instead of using placeholders
+  - Skip the LLM on near-empty text (<50 chars); image-only PDFs otherwise make the model fabricate records
+  - Clear title/description/doi whose values aren't present in the source text
+
+### Fixes
+- Stop falling back to the tenant id as the user id
+- *(helm)* Keep the migration job and its logs after it finishes
+  - Drop ttlSecondsAfterFinished so failed jobs and their logs aren't deleted
+  - Drop hook-succeeded so a completed job stays until the next install or upgrade
+
+### Refactor
+- *(helm)* Extract shared db and langfuse env helpers
+
+## [0.2.1] - 2026-07-02
+
+### Fixes
+- Install the langfuse extra in the Docker image
+
+## [0.2.0] - 2026-07-02
+
+### Features
 - *(tracking)* Add created, starttime, endtime to workflows, needed for KPIs
-- Helm chart v0.2.1
-  - Add database migration job, langfuse secrets, and make the worker deployment's replicas configurable
+- *(workflow)* Add user_id to workflows and context
+- *(tracing)* Add optional Langfuse tracing
+- *(helm)* Add database migration job and Langfuse secrets
+
+### Fixes
+- *(db)* Add unique constraint on public_id
+- Limit retries per activity and workflow
+- *(orcid)* Fix ORCID extraction and validation
+  - Validate with idutils, shared by schema and extractor; drop IDs that fail the check digit
+  - Flatten creators into parallel name/orcid/affiliation lists so gpt-oss keeps them in tool calls
+  - Inline each ORCID next to its author and match the anchor by its position rather than the first substring match
+
+### Refactor
+- *(extractor)* Name the ORCID icon-matching tolerances
+- *(helm)* Make worker replicas configurable
 
 ## [0.1.3] - 2026-06-29
 
@@ -44,7 +79,9 @@
 ## [0.0.1] - 2026-06-09
 _First release._
 
-[unreleased]: https://github.com/inveniosoftware/orcha/compare/v0.1.3...HEAD
+[unreleased]: https://github.com/inveniosoftware/orcha/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/inveniosoftware/orcha/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/inveniosoftware/orcha/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/inveniosoftware/orcha/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/inveniosoftware/orcha/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/inveniosoftware/orcha/compare/v0.0.1...v0.1.1
