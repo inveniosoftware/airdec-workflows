@@ -193,6 +193,37 @@ docker compose logs -f
 open http://localhost:8080
 ```
 
+## Releasing
+
+Release for Orcha are done manually. Pushing a `v*` tag triggers the image build, so commit the version bump and changelog before you tag.
+
+### 1. Bump the version
+
+Bump `pyproject.toml` and re-lock in one step:
+
+```bash
+uv version --bump patch   # or: minor, major
+```
+
+Then set the same `X.Y.Z` in `charts/orcha/Chart.yaml`, in both `version` and `appVersion`.
+
+### 2. Update the changelog
+
+`CHANGELOG.md` follows [Keep a Changelog](https://keepachangelog.com/). Every `feat:`/`fix:`/`refactor:` commit should already have a bullet under `## [Unreleased]`. At release time, promote that section:
+
+- Rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD` and open a fresh empty `## [Unreleased]` above it.
+- In the link footer, repoint `[unreleased]` to `vX.Y.Z...HEAD` and add `[X.Y.Z]: .../compare/<prev>...vX.Y.Z`.
+
+### 3. Commit, tag, and push
+
+```bash
+git commit -am "release: vX.Y.Z"
+git tag vX.Y.Z
+git push origin main vX.Y.Z
+```
+
+The tag push kicks off the Docker workflow below, which builds and publishes the image.
+
 ## Docker Image Release
 
 Docker images are automatically built and published to `registry.cern.ch/orcha/orcha` by the [Docker workflow](.github/workflows/dockerpublish.yml).
