@@ -129,12 +129,20 @@ class ExtractedMetadata(BaseModel):
     )
     description: str | None = Field(
         default=None,
-        description="Abstract or summary",
-        examples=["A short summary of the document's purpose, methods, and findings."],
+        description=(
+            "Abstract or executive summary of the document, copied word-for-word, "
+            "complete and unchanged; never paraphrase, shorten, or write a new "
+            "summary. Null if the document has no abstract or summary."
+        ),
+        examples=["The abstract of the document, word for word."],
     )
     creators: list[str] = Field(
         default_factory=list,
-        description="Creator full names in '<family>, <given>' format, in order",
+        description=(
+            "Creator full names in '<family>, <given>' format, in order. Include "
+            "every author named in the document; never truncate the list or use "
+            "et al."
+        ),
         examples=[["Doe, Jane", "van der Berg, A."]],
     )
     creator_orcids: list[str] = Field(
