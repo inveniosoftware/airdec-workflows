@@ -20,7 +20,7 @@ from temporalio.contrib.pydantic import pydantic_data_converter
 from .config import get_settings
 from .database.session import dispose_engine, init_engine
 from .dependencies import get_current_user
-from .routers import workflows
+from .routers import workflow_feedback, workflows
 from .tenants import TenantRegistry
 
 logger = logging.getLogger(__name__)
@@ -62,6 +62,10 @@ if _settings.allowed_origins:
     )
 
 
+app.include_router(workflows.router)
+app.include_router(workflow_feedback.router)
+
+
 @app.exception_handler(StarletteHTTPException)
 async def custom_http_exception_handler(request, exc):
     """Custom error handling for logging HTTP errors."""
@@ -85,9 +89,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         exc.errors(),
     )
     return await request_validation_exception_handler(request, exc)
-
-
-app.include_router(workflows.router)
 
 
 @app.get("/healthz")
