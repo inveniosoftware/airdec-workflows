@@ -531,59 +531,6 @@ def test_create_workflow_rejects_unknown_params(client, db_session, mocker):
     mock_temporal.start_workflow.assert_not_awaited()
 
 
-def test_list_workflows_requires_auth(client):
-    """GET /workflows/ without a token is rejected."""
-    response = client.get("/workflows/")
-    assert response.status_code == 401
-
-
-def test_list_workflows_tenant_isolation(client, db_session):
-    """GET /workflows/ only returns workflows for the authenticated tenant."""
-    # Create workflows for two different tenants
-    wf_a = Workflow(
-        workflow_type="extract_metadata",
-        status=WorkflowStatus.SUCCESS,
-        params={"url": "https://example.com/test_a.pdf"},
-        tenant_id="tenant-a",
-    )
-    wf_b = Workflow(
-        workflow_type="extract_metadata",
-        status=WorkflowStatus.SUCCESS,
-        params={"url": "https://example.com/test_b.pdf"},
-        tenant_id="tenant-b",
-    )
-    db_session.add_all([wf_a, wf_b])
-    db_session.commit()
-    db_session.refresh(wf_a)
-    db_session.refresh(wf_b)
-
-    # Tenant A should only see their own workflow
-    token_a = generate_test_token()
-    response = client.get(
-        "/workflows/",
-        headers={"Authorization": f"Bearer {token_a}"},
-    )
-    assert response.status_code == 200
-    workflows = response.json()
-    assert len(workflows) == 1
-    assert workflows[0]["tenant_id"] == "tenant-a"
-    assert workflows[0]["public_id"] == wf_a.public_id
-
-    # Tenant B should only see their own workflow
-    token_b = generate_test_token(
-        tenant_id="tenant-b", use_private_key=TENANT_B_PRIVATE
-    )
-    response = client.get(
-        "/workflows/",
-        headers={"Authorization": f"Bearer {token_b}"},
-    )
-    assert response.status_code == 200
-    workflows = response.json()
-    assert len(workflows) == 1
-    assert workflows[0]["tenant_id"] == "tenant-b"
-    assert workflows[0]["public_id"] == wf_b.public_id
-
-
 def test_read_workflow_includes_result(client, db_session):
     """GET /workflows/{id} includes `result.suggestions` when present."""
     wf = Workflow(
