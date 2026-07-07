@@ -9,6 +9,10 @@
   - Clear title/description/doi whose values aren't present in the source text
 
 ### Fixes
+- *(schema)* Tighten extraction prompts so the model copies the source faithfully
+  - Copy the abstract word-for-word instead of paraphrasing or shortening it
+  - Include every author instead of truncating the list with et al.
+  - Resolve each author's affiliation marker and drop the marker and postal address
 - Stop falling back to the tenant id as the user id
 - *(helm)* Keep the migration job and its logs after it finishes
   - Drop ttlSecondsAfterFinished so failed jobs and their logs aren't deleted
