@@ -24,6 +24,13 @@ class WorkflowStatus(str, Enum):
     ERROR = "error"
 
 
+class FeedbackRating(str, Enum):
+    """User feedback rating for a workflow result field."""
+
+    POSITIVE = "positive"
+    NEGATIVE = "negative"
+
+
 class Workflow(SQLModel, table=True):
     """Database model for a workflow execution."""
 
@@ -46,4 +53,22 @@ class Workflow(SQLModel, table=True):
     end_time: datetime | None = Field(
         default=None,
         sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
+
+
+class WorkflowFeedback(SQLModel, table=True):
+    """Append-only feedback for a workflow result field."""
+
+    __tablename__ = "workflow_feedback"
+
+    id: int | None = Field(default=None, primary_key=True)
+    workflow_id: int = Field(foreign_key="workflow.id")
+    tenant_id: str
+    user_id: str | None = None
+    field_path: str
+    rating: FeedbackRating
+    comment: str | None = None
+    created: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_column=Column(DateTime(timezone=True), nullable=False),
     )
