@@ -22,14 +22,6 @@ class WorkflowService:
         """Create a workflow service for one database session."""
         self.session = session
 
-    def list_for_tenant(self, tenant_id: str) -> list[Workflow]:
-        """List workflows owned by a tenant."""
-        return list(
-            self.session.exec(
-                select(Workflow).where(Workflow.tenant_id == tenant_id)
-            ).all()
-        )
-
     def get_by_public_id(self, workflow_id: str) -> Workflow:
         """Get a workflow by public ID."""
         try:

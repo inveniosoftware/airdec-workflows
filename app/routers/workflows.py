@@ -47,19 +47,6 @@ def _get_temporal_client(request: Request) -> Client:
     return request.app.state.temporal_client
 
 
-@router.get(
-    "/",
-    response_model=list[Workflow],
-    response_model_exclude={"__all__": {"id"}},
-)
-async def read_all(
-    auth: AuthContext = Depends(get_current_user),
-    session: Session = Depends(get_db_session),
-):
-    """List all workflows for the authenticated tenant."""
-    return WorkflowService(session).list_for_tenant(auth.tenant_id)
-
-
 @router.post(
     "/",
     response_model=Workflow,

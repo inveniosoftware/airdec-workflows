@@ -20,19 +20,6 @@ def _workflow(tenant_id: str, url: str = "https://example.com/test.pdf") -> Work
     )
 
 
-def test_list_for_tenant_returns_only_owned_workflows(db_session):
-    """Workflow listing is tenant-scoped."""
-    workflow_a = _workflow("tenant-a", "https://example.com/a.pdf")
-    workflow_b = _workflow("tenant-b", "https://example.com/b.pdf")
-    db_session.add_all([workflow_a, workflow_b])
-    db_session.commit()
-    db_session.refresh(workflow_a)
-
-    workflows = WorkflowService(db_session).list_for_tenant("tenant-a")
-
-    assert [workflow.public_id for workflow in workflows] == [workflow_a.public_id]
-
-
 def test_get_by_public_id_returns_workflow(db_session):
     """Workflow lookup returns the public-id match."""
     workflow = _workflow("tenant-a")
