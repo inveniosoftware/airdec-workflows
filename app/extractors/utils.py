@@ -10,11 +10,11 @@ from .errors import InvalidPageSelectionError
 
 def resolve_pages(pages: Optional[List[int]], total_pages: int) -> Optional[List[int]]:
     """Resolve page list with negative indices to 0-based page numbers."""
-    if pages is None:
-        return None
-
     if total_pages < 1:
         raise InvalidPageSelectionError("Cannot select pages from a PDF with no pages")
+
+    if pages is None:
+        pages = [1, 2] if total_pages >= 2 else [1]
 
     resolved = set()
     for p in pages:

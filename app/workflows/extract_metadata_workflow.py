@@ -3,7 +3,7 @@
 
 from datetime import timedelta
 
-from pydantic import Field, HttpUrl
+from pydantic import HttpUrl
 from pydantic_ai.durable_exec.temporal import (
     PydanticAIWorkflow,
 )
@@ -37,7 +37,7 @@ class ExtractMetadataParams(WorkflowParams):
 
     url: HttpUrl
     extractor: str = "pdfplumber"
-    pages: list[int] | None = Field(default_factory=lambda: [1, 2])
+    pages: list[int] | None = None
 
 
 @workflow.defn

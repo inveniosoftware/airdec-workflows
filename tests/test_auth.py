@@ -471,7 +471,7 @@ def test_create_workflow_stamps_tenant_id(client, db_session, mocker):
     assert wf.params == {
         "url": "https://example.com/doc.pdf",
         "extractor": "pdfplumber",
-        "pages": [1, 2],
+        "pages": None,
     }
     assert wf.public_id == created_id
     assert response.json()["user_id"] == "user-123"
