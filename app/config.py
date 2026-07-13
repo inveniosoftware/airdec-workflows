@@ -7,7 +7,7 @@ from functools import lru_cache
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class LlmSettings(BaseModel):
@@ -26,6 +26,11 @@ class LlmSettings(BaseModel):
 
 class Settings(BaseSettings):
     """Application configuration loaded from environment variables."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        extra="ignore",
+    )
 
     # Database
     pguser: str = "postgres"
@@ -60,6 +65,9 @@ class Settings(BaseSettings):
     langfuse_public_key: str | None = None
     langfuse_secret_key: str | None = None
     langfuse_base_url: str | None = None
+
+    # PDF downloads
+    pdf_http_allowlist: str | None = None
 
     @property
     def database_url(self) -> str:
