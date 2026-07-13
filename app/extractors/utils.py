@@ -25,15 +25,11 @@ def resolve_pages(pages: Optional[List[int]], total_pages: int) -> Optional[List
 
         if p > 0:
             if p > total_pages:
-                raise InvalidPageSelectionError(
-                    f"Page {p} is out of range for a PDF with {total_pages} pages"
-                )
+                continue
             idx = p - 1
         else:
             if p < -total_pages:
-                raise InvalidPageSelectionError(
-                    f"Page {p} is out of range for a PDF with {total_pages} pages"
-                )
+                continue
             idx = total_pages + p
 
         resolved.add(idx)
