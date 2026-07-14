@@ -63,7 +63,7 @@ class CheckFundingRelevance:
             await workflow.execute_activity(
                 update_workflow,
                 WorkflowUpdateRequest(
-                    workflow_id=context.workflow_id,
+                    public_id=context.workflow_id,
                     tenant_id=context.tenant_id,
                     status=WorkflowStatus.ERROR,
                     result=None,
