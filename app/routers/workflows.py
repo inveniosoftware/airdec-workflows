@@ -5,24 +5,19 @@
 
 import asyncio
 import logging
-from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, select
-from temporalio.client import Client
-from temporalio.common import RetryPolicy
 
 from app.auth import AuthContext, decode_access_token
-from app.database.models import Workflow, WorkflowStatus
+from app.database.models import Workflow
 from app.database.session import get_db_session
 from app.dependencies import get_current_user
 from app.services.workflows import WorkflowService
-from app.workflows.registry import get_workflow_spec
-from app.workflows.specs import WorkflowContext
 
 logger = logging.getLogger(__name__)
 
@@ -43,10 +38,6 @@ class CreateWorkflowRequest(BaseModel):
     user_id: str | None = None
 
 
-def _get_temporal_client(request: Request) -> Client:
-    return request.app.state.temporal_client
-
-
 @router.post(
     "/",
     response_model=Workflow,
@@ -54,64 +45,17 @@ def _get_temporal_client(request: Request) -> Client:
 )
 async def create(
     body: CreateWorkflowRequest,
-    request: Request,
     auth: AuthContext = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ):
     """Create a new workflow and start the Temporal workflow."""
-    try:
-        spec = get_workflow_spec(body.workflow_type)
-    except KeyError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
-
-    try:
-        params = spec.params_model.model_validate(body.params)
-    except ValidationError as exc:
-        raise HTTPException(status_code=422, detail=exc.errors()) from exc
-
-    workflow = Workflow(
+    return await WorkflowService(session).create(
         workflow_type=body.workflow_type,
-        status=WorkflowStatus.PROCESSING,
-        params=params.model_dump(mode="json"),
+        params=body.params,
         tenant_id=auth.tenant_id,
         user_id=body.user_id,
+        start=True,
     )
-
-    try:
-        session.add(workflow)
-        session.commit()
-        workflow_id = workflow.public_id
-    except SQLAlchemyError:
-        logger.exception("Error creating workflow")
-        raise HTTPException(status_code=500, detail="Could not create workflow")
-
-    try:
-        client = _get_temporal_client(request)
-        await client.start_workflow(
-            spec.workflow_cls.run,
-            args=[
-                WorkflowContext(
-                    workflow_id=workflow_id,
-                    tenant_id=auth.tenant_id,
-                    user_id=workflow.user_id,
-                ),
-                params,
-            ],
-            id=f"{spec.id_prefix}-{workflow_id}",
-            task_queue=spec.task_queue,
-            retry_policy=RetryPolicy(maximum_attempts=1),
-        )
-    except Exception:
-        logger.exception("Error starting Temporal workflow")
-        try:
-            workflow.status = WorkflowStatus.ERROR
-            workflow.end_time = datetime.now(UTC)
-            session.commit()
-        except SQLAlchemyError:
-            pass
-        raise HTTPException(status_code=500, detail="Could not start workflow")
-
-    return workflow
 
 
 @router.get(

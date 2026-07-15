@@ -25,14 +25,14 @@ def db_session():
     """Provide a real SQLModel session backed by in-memory SQLite.
 
     Creates all tables before the test and drops them after.
-    Overrides both the FastAPI ``get_session`` dependency and
-    ``app.state.db_engine`` so that route handlers and the
-    stream generator use the same test database.
+    Overrides the FastAPI ``get_session`` dependency and
+    ``app.state.db_engine`` so that route handlers, services, and the
+    stream generator all use the same test database.
     """
     SQLModel.metadata.create_all(_test_engine)
 
     def _override_get_session():
-        with Session(_test_engine) as session:
+        with Session(_test_engine, expire_on_commit=False) as session:
             yield session
 
     app.dependency_overrides[get_db_session] = _override_get_session
@@ -41,7 +41,7 @@ def db_session():
     # directly (e.g. the SSE stream generator) uses the test engine.
     app.state.db_engine = _test_engine
 
-    with Session(_test_engine) as session:
+    with Session(_test_engine, expire_on_commit=False) as session:
         yield session
 
     SQLModel.metadata.drop_all(_test_engine)
