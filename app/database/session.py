@@ -4,7 +4,7 @@
 from collections.abc import Generator
 from contextlib import contextmanager
 
-from sqlalchemy import Engine
+from sqlalchemy import Engine, event
 from sqlmodel import Session, create_engine
 
 from ..config import get_settings
@@ -12,11 +12,23 @@ from ..config import get_settings
 _engine: Engine | None = None
 
 
+def _set_sqlite_pragmas(dbapi_connection, connection_record):
+    """Enable foreign keys, WAL journaling, and a busy timeout on connect."""
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA busy_timeout=5000")
+    cursor.close()
+
+
 def init_engine() -> Engine:
     """Create and store the global SQLAlchemy engine."""
     global _engine
     settings = get_settings()
-    _engine = create_engine(settings.database_url)
+    engine = create_engine(settings.database_url)
+    if engine.dialect.name == "sqlite":
+        event.listen(engine, "connect", _set_sqlite_pragmas)
+    _engine = engine
     return _engine
 
 

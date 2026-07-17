@@ -75,3 +75,9 @@ dmypy.txt
 # Keys
 *.pem
 tenants.json
+
+# Local SQLite / Temporal dev databases
+*.db
+*.db-wal
+*.db-shm
+*.db-journal

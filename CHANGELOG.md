@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Features
+- `orcha run` runs the complete local stack: migrations, a Temporal dev server, the API, and a worker, with prefixed logs and shared teardown
+  - Requires the `temporal` CLI; `--reset` deletes `orcha.db`/`temporal.db` first, a normal shutdown preserves them
+- SQLite is the local-development default database; PostgreSQL remains the production default
+  - `DB_URL` overrides everything; otherwise `DB_DIALECT` picks between `DB_PATH` (sqlite) and the `DB_USER`/`DB_PASSWORD`/`DB_HOST`/`DB_PORT`/`DB_NAME` fields (postgresql)
+  - **Breaking:** the `PGUSER`/`PGPASSWORD`/`PGHOST`/`PGPORT`/`PGDATABASE` settings are removed; use the `DB_*` fields instead
+
 ## [0.4.0] - 2026-07-30
 
 ### Features

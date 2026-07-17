@@ -16,27 +16,37 @@ Orcha AI extraction.
 uv sync
 ```
 
-### 2. Start infrastructure (PostgreSQL + Temporal)
+### 2. Run the complete local stack
+
+SQLite is the local-development default, so no Docker services are required.
+`orcha run` applies migrations against a local `orcha.db` file, starts a
+Temporal dev server backed by `temporal.db`, then the API and a worker:
+
+```bash
+uv run orcha run
+```
+
+This requires the [`temporal` CLI](https://docs.temporal.io/cli#install) to
+be installed. Stopping it (Ctrl-C) preserves both database files; pass
+`--reset` to delete them first and start from a clean state:
+
+```bash
+uv run orcha run --reset
+```
+
+### Running against PostgreSQL
+
+To use PostgreSQL instead (e.g. to match production), start the Dockerized
+services, point the app at them, and run the API and worker as separate
+processes:
 
 ```bash
 uv run orcha services start
-```
-
-### 3. Apply database migrations
-
-```bash
+export DB_DIALECT=postgresql   # DB_USER/DB_PASSWORD/DB_HOST/DB_PORT/DB_NAME
+                                # default to the docker-compose values
 uv run orcha migrate
-```
-
-### 4. Start the application
-
-```bash
-# Start both server and worker
-uv run orcha run
-
-# Or start them individually
-uv run orcha run server     # FastAPI dev server
-uv run orcha run workers    # Temporal worker for the default queue
+uv run orcha run server --dev  # FastAPI dev server
+uv run orcha run workers       # Temporal worker for the default queue
 
 # Run a worker for a specific queue
 uv run orcha run workers --task-queue low-priority
@@ -161,8 +171,10 @@ export OLLAMA_BASE_URL="http://localhost:11434/v1"
 | `orcha services start`             | Start PostgreSQL + Temporal via Docker    |
 | `orcha services stop`              | Stop all Docker services                  |
 | `orcha migrate`                    | Apply all database migrations             |
-| `orcha run`                        | Start server and default-queue worker     |
-| `orcha run server`                 | Start FastAPI dev server only             |
+| `orcha run`                        | Migrate, then start Temporal, API, and worker (SQLite) |
+| `orcha run --reset`                | Same, after deleting `orcha.db` and `temporal.db` |
+| `orcha run server`                 | Start the FastAPI server only             |
+| `orcha run server --dev`           | Start the FastAPI server with hot reload  |
 | `orcha run workers`                | Start Temporal worker for default queue   |
 | `orcha run workers --task-queue Q` | Start Temporal worker for a specific queue |
 

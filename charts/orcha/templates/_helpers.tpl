@@ -111,21 +111,23 @@ Database Secret Name
 {{- end }}
 
 {{/*
-Database connection env vars (PG*). Include with `nindent 12` under `env:`.
+Database connection env vars (DB_*). Include with `nindent 12` under `env:`.
 */}}
 {{- define "orcha.databaseEnv" -}}
-- name: PGUSER
+- name: DB_DIALECT
+  value: postgresql
+- name: DB_USER
   value: {{ include "orcha.databaseUser" . | quote }}
-- name: PGPASSWORD
+- name: DB_PASSWORD
   valueFrom:
     secretKeyRef:
       name: {{ include "orcha.dbSecretName" . }}
       key: password
-- name: PGHOST
+- name: DB_HOST
   value: {{ include "orcha.databaseHost" . | quote }}
-- name: PGPORT
+- name: DB_PORT
   value: {{ include "orcha.databasePort" . | quote }}
-- name: PGDATABASE
+- name: DB_NAME
   value: {{ include "orcha.databaseName" . | quote }}
 {{- end }}
 

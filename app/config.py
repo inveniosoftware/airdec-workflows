@@ -33,11 +33,16 @@ class Settings(BaseSettings):
     )
 
     # Database
-    pguser: str = "postgres"
-    pgpassword: str = "postgres"
-    pghost: str = "localhost"
-    pgport: str = "5433"
-    pgdatabase: str = "orcha"
+    # DB_URL overrides everything else. Without it, DB_DIALECT chooses between
+    # sqlite for local development and postgresql built from the DB_USER fields.
+    db_url: str | None = None
+    db_dialect: Literal["sqlite", "postgresql"] = "sqlite"
+    db_path: str = "orcha.db"
+    db_user: str = "postgres"
+    db_password: str = "postgres"
+    db_host: str = "localhost"
+    db_port: str = "5433"
+    db_name: str = "orcha"
 
     # Temporal
     temporal_host: str = "localhost:7233"
@@ -71,10 +76,14 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self) -> str:
-        """Build the PostgreSQL connection string."""
+        """Build the database connection string."""
+        if self.db_url:
+            return self.db_url
+        if self.db_dialect == "sqlite":
+            return f"sqlite:///{self.db_path}"
         return (
-            f"postgresql+psycopg://{self.pguser}:{self.pgpassword}"
-            f"@{self.pghost}:{self.pgport}/{self.pgdatabase}"
+            f"postgresql+psycopg://{self.db_user}:{self.db_password}"
+            f"@{self.db_host}:{self.db_port}/{self.db_name}"
         )
 
 

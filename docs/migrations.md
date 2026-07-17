@@ -3,9 +3,11 @@
 Alembic is the only mechanism for creating or changing the deployed database
 schema. The application and workers do not create tables at startup.
 
-Alembic reads the PostgreSQL connection settings from `app.config.Settings`, so
-the same `PGUSER`, `PGPASSWORD`, `PGHOST`, `PGPORT`, and `PGDATABASE` values are
-used by both the application and migrations.
+Alembic reads the connection settings from `app.config.Settings`, so the same
+`DB_URL` (or `DB_DIALECT`/`DB_PATH` for SQLite, `DB_USER`/`DB_PASSWORD`/
+`DB_HOST`/`DB_PORT`/`DB_NAME` for PostgreSQL) values are used by both the
+application and migrations. SQLite is the local-development default; set
+`DB_DIALECT=postgresql` to migrate against PostgreSQL.
 
 Run all commands below from the repository root, where `alembic.ini` is located.
 
