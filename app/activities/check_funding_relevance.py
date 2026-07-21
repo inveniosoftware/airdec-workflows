@@ -8,6 +8,8 @@ from temporalio import activity
 
 from app.activities._llm import build_agent
 from app.config import get_settings
+from app.observability import propagate_langfuse_context
+from app.workflows.specs import WorkflowContext
 
 
 class CheckFundingRelevanceRequest(BaseModel):
@@ -25,18 +27,32 @@ class CheckFundingRelevanceResponse(BaseModel):
     message: str = Field(description="Explanation of the decision")
 
 
+# Below this many non-whitespace-stripped chars, there is insufficient data
+# for performing a relevance check.
+MIN_METADATA_CHARS = 30
+
+
 @activity.defn
 async def check_funding_relevance(
     request: CheckFundingRelevanceRequest,
+    context: WorkflowContext,
 ) -> CheckFundingRelevanceResponse:
     """Use an LLM to assess if a record's metadata matches a grant description."""
     agent = build_agent(get_settings().llm, CheckFundingRelevanceResponse, request.rule)
 
+    title = str(request.metadata.get("title", ""))
+    description = str(request.metadata.get("description", ""))
+    if len(title.strip()) + len(description.strip()) < MIN_METADATA_CHARS:
+        return CheckFundingRelevanceResponse(
+            match=False,
+            message="Insufficient metadata to check funding relevance.",
+        )
     prompt = (
         f"Grant description:\n{request.award_description}\n\n"
-        f"Record title:\n{request.metadata.get('title')}\n\n"
-        f"Record description:\n{request.metadata.get('description')}"
+        f"Record title:\n{title}\n\n"
+        f"Record description:\n{description}"
     )
 
-    result = await agent.run(prompt)
+    with propagate_langfuse_context(context, trace_name="check_funding_relevance"):
+        result = await agent.run(prompt)
     return result.output

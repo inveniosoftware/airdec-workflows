@@ -52,11 +52,14 @@ class CheckFundingRelevance:
 
             result = await workflow.execute_activity(
                 check_funding_relevance,
-                CheckFundingRelevanceRequest(
-                    metadata=params.metadata,
-                    award_description=params.award_description,
-                    rule=params.rule,
-                ),
+                args=[
+                    CheckFundingRelevanceRequest(
+                        metadata=params.metadata,
+                        award_description=params.award_description,
+                        rule=params.rule,
+                    ),
+                    context,
+                ],
                 start_to_close_timeout=timedelta(minutes=2),
             )
         except Exception:
