@@ -14,13 +14,12 @@ from fastapi.exception_handlers import (
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from temporalio.client import Client
-from temporalio.contrib.pydantic import pydantic_data_converter
 
 from .config import get_settings
 from .database.session import dispose_engine, init_engine
 from .dependencies import get_current_user
 from .routers import workflow_feedback, workflows
+from .temporal import dispose_temporal_client, init_temporal_client
 from .tenants import TenantRegistry
 
 logger = logging.getLogger(__name__)
@@ -32,10 +31,7 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     engine = init_engine()
     app.state.db_engine = engine
-    app.state.temporal_client = await Client.connect(
-        settings.temporal_host,
-        data_converter=pydantic_data_converter,
-    )
+    await init_temporal_client()
 
     # Load tenant registry
     if not settings.auth_disabled:
@@ -46,6 +42,7 @@ async def lifespan(app: FastAPI):
         app.state.tenant_registry = TenantRegistry()
 
     yield
+    dispose_temporal_client()
     dispose_engine()
 
 

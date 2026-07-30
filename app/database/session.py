@@ -38,7 +38,7 @@ def get_engine() -> Engine:
 @contextmanager
 def get_session() -> Generator[Session, None, None]:
     """Provide a database session context manager."""
-    with Session(get_engine()) as session:
+    with Session(get_engine(), expire_on_commit=False) as session:
         yield session
 
 

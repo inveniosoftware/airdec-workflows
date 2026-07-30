@@ -66,7 +66,7 @@ def configure_test_settings(monkeypatch, mocker):
     get_settings.cache_clear()
 
     # Mock Temporal Client
-    mocker.patch("app.main.Client.connect", return_value=mocker.AsyncMock())
+    mocker.patch("app.temporal.Client.connect", return_value=mocker.AsyncMock())
 
     # Patch TenantRegistry.from_file so lifespan doesn't look for a real file
     mocker.patch(
@@ -448,7 +448,10 @@ def test_create_workflow_stamps_tenant_id(client, db_session, mocker):
 
     # Mock the temporal client to avoid real connection
     mock_temporal = mocker.AsyncMock()
-    mocker.patch.object(client.app.state, "temporal_client", mock_temporal)
+    mocker.patch(
+        "app.services.workflows.get_temporal_client",
+        return_value=mock_temporal,
+    )
 
     response = client.post(
         "/workflows/",
@@ -491,7 +494,10 @@ def test_create_workflow_rejects_invalid_params(client, db_session, mocker):
     token = generate_test_token()
 
     mock_temporal = mocker.AsyncMock()
-    mocker.patch.object(client.app.state, "temporal_client", mock_temporal)
+    mocker.patch(
+        "app.services.workflows.get_temporal_client",
+        return_value=mock_temporal,
+    )
 
     response = client.post(
         "/workflows/",
@@ -512,7 +518,10 @@ def test_create_workflow_rejects_unknown_params(client, db_session, mocker):
     token = generate_test_token()
 
     mock_temporal = mocker.AsyncMock()
-    mocker.patch.object(client.app.state, "temporal_client", mock_temporal)
+    mocker.patch(
+        "app.services.workflows.get_temporal_client",
+        return_value=mock_temporal,
+    )
 
     response = client.post(
         "/workflows/",
