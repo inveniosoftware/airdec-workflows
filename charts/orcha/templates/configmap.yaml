@@ -13,6 +13,9 @@ data:
   {{- if .Values.appConfig.langfuseBaseUrl }}
   LANGFUSE_BASE_URL: {{ .Values.appConfig.langfuseBaseUrl | quote }}
   {{- end }}
+  {{- if .Values.appConfig.pdfHttpAllowlist }}
+  PDF_HTTP_ALLOWLIST: {{ .Values.appConfig.pdfHttpAllowlist | quote }}
+  {{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap
