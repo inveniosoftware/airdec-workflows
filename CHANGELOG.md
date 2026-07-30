@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-30
+
+### Features
+
+- Allow local file downloads without ssl verification or with custom ca bundle
+- *(workflow)* Add a funding check workflow
+  - Refactor(extraction): Move shared LLM construction logic from extract_metadata into a reusable _llm.build_agent helper, and use it in the existing metadata extraction activity.
+  - Add a new check_funding_relevance activity. The new activity assesses whether a record's title and description match a grant description, guided by a caller-supplied rule.
+
+### Fixes
+
+- Silently fail if requested page is out of index: handles cases where the file passed has less pages than the default for extraction.
+- Helm: handle new setting pdf_http_allowlist
+
 ## [0.3.0] - 2026-07-07
 
 ### Features
@@ -91,7 +105,8 @@
 ## [0.0.1] - 2026-06-09
 _First release._
 
-[unreleased]: https://github.com/inveniosoftware/orcha/compare/v0.2.2...HEAD
+[unreleased]: https://github.com/inveniosoftware/orcha/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/inveniosoftware/orcha/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/inveniosoftware/orcha/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/inveniosoftware/orcha/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/inveniosoftware/orcha/compare/v0.2.0...v0.2.1
