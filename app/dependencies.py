@@ -10,7 +10,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 from .auth import AuthContext, decode_access_token
 from .config import get_settings
-from .tenants import TenantRegistry
+from .tenants import DEV_TENANT_ID, TenantRegistry
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 
@@ -33,8 +33,8 @@ async def get_current_user(
 ) -> AuthContext:
     """Extract and verify the JWT, resolving the tenant.
 
-    When AUTH_DISABLED=true, authentication is skipped and a
-    dummy AuthContext is returned (for local development only).
+    With authentication off no token is required and every request runs as the
+    dev tenant.
 
     Args:
         token: The Bearer token extracted by OAuth2PasswordBearer.
@@ -44,8 +44,8 @@ async def get_current_user(
         An AuthContext with tenant_id and optional workflow_id.
     """
     settings = get_settings()
-    if settings.auth_disabled:
-        return AuthContext(tenant_id="dev-tenant")
+    if settings.auth_off:
+        return AuthContext(tenant_id=DEV_TENANT_ID)
 
     if not token:
         raise HTTPException(

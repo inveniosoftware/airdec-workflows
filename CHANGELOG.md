@@ -8,6 +8,12 @@
 - SQLite is the local-development default database; PostgreSQL remains the production default
   - `DB_URL` overrides everything; otherwise `DB_DIALECT` picks between `DB_PATH` (sqlite) and the `DB_USER`/`DB_PASSWORD`/`DB_HOST`/`DB_PORT`/`DB_NAME` fields (postgresql)
   - **Breaking:** the `PGUSER`/`PGPASSWORD`/`PGHOST`/`PGPORT`/`PGDATABASE` settings are removed; use the `DB_*` fields instead
+- *(auth)* Add `DEV_MODE`, which runs the API with authentication off and serves every request as the `dev` tenant
+  - `orcha run` turns it on, so a local InvenioRDM needs no keys; `AUTH_DISABLED` overrides it either way for exercising real tenant tokens locally
+  - **Breaking:** `AUTH_DISABLED` now defaults to unset and follows `DEV_MODE`; the tenant it stands in for is `dev` rather than `dev-tenant`
+- *(cli)* Add `orcha tenants` for the tenant registry
+  - `add` registers a tenant's public key, `list` shows what is registered
+  - `token` signs a token for a tenant from its private key
 
 ## [0.4.0] - 2026-07-30
 

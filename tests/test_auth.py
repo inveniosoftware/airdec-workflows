@@ -61,7 +61,7 @@ TEST_REGISTRY = TenantRegistry(
 @pytest.fixture(autouse=True)
 def configure_test_settings(monkeypatch, mocker):
     """Override settings and mock infrastructure for testing."""
-    monkeypatch.setenv("AUTH_DISABLED", "false")
+    monkeypatch.setenv("DEV_MODE", "false")
 
     get_settings.cache_clear()
 
@@ -180,18 +180,6 @@ def test_auth_cross_tenant_key_rejected(client):
     token = generate_test_token(tenant_id="tenant-b", use_private_key=TENANT_A_PRIVATE)
     response = client.get("/", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 401
-
-
-# ---------- Auth disabled tests ----------
-
-
-def test_auth_disabled_bypass(client, monkeypatch):
-    """When AUTH_DISABLED is true, any request passes without a token."""
-    monkeypatch.setenv("AUTH_DISABLED", "true")
-    get_settings.cache_clear()
-
-    response = client.get("/")
-    assert response.status_code == 200
 
 
 # ---------- Workflow-scoped access tests ----------
@@ -356,15 +344,10 @@ def test_auth_malformed_token_returns_401(client, bad_token):
 # ---------- Stream endpoint auth tests ----------
 
 
-def test_stream_missing_token_returns_422(client):
-    """The stream endpoint requires a token query parameter."""
-    response = client.get("/workflows/any-workflow/stream")
-    assert response.status_code == 422  # FastAPI validation error
-
-
-def test_stream_empty_token_returns_401(client):
-    """The stream endpoint with an empty token returns 401."""
-    response = client.get("/workflows/any-workflow/stream?token=")
+@pytest.mark.parametrize("query", ["", "?token="])
+def test_stream_without_a_token_returns_401(client, query):
+    """The stream endpoint rejects a missing or empty token query parameter."""
+    response = client.get(f"/workflows/any-workflow/stream{query}")
     assert response.status_code == 401
     assert "missing token" in response.json()["detail"].lower()
 

@@ -17,6 +17,7 @@ import typer
 from alembic import command
 from alembic.config import Config
 
+from app.cli.tenants import tenants_app
 from app.config import get_settings
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -29,6 +30,7 @@ services_app = typer.Typer(
 run_app = typer.Typer(help="Run application processes.")
 app.add_typer(services_app, name="services")
 app.add_typer(run_app, name="run")
+app.add_typer(tenants_app, name="tenants")
 
 
 @app.command()
@@ -202,6 +204,9 @@ def run_stack(
     # with cwd=PROJECT_ROOT) to resolve the same absolute sqlite path,
     # regardless of the invoking shell's cwd.
     os.environ["DB_PATH"] = str(db_path)
+    # This command only serves local development, so authentication is off
+    # unless the caller says otherwise.
+    os.environ.setdefault("DEV_MODE", "1")
     get_settings.cache_clear()
     settings = get_settings()
 

@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
+DEV_TENANT_ID = "dev"
+
 
 @dataclass(frozen=True)
 class TenantConfig:

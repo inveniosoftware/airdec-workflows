@@ -49,8 +49,12 @@ class Settings(BaseSettings):
 
     # Authentication
     jwt_algorithm: str = "RS256"
-    auth_disabled: bool = False
     tenants_config_path: str = "tenants.json"
+    # `orcha run` sets DEV_MODE, which turns authentication off. An explicit
+    # AUTH_DISABLED overrides that, so AUTH_DISABLED=0 keeps real tenant tokens
+    # in play on the local stack.
+    dev_mode: bool = False
+    auth_disabled: bool | None = None
 
     # Security
     allowed_origins: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
@@ -73,6 +77,13 @@ class Settings(BaseSettings):
 
     # PDF downloads
     pdf_http_allowlist: str | None = None
+
+    @property
+    def auth_off(self) -> bool:
+        """Whether requests skip verification and run as the dev tenant."""
+        if self.auth_disabled is None:
+            return self.dev_mode
+        return self.auth_disabled
 
     @property
     def database_url(self) -> str:

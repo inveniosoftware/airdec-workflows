@@ -17,10 +17,12 @@ from temporalio.client import Client
 from temporalio.common import RetryPolicy
 
 from app.auth import AuthContext, decode_access_token
+from app.config import get_settings
 from app.database.models import Workflow, WorkflowStatus
 from app.database.session import get_db_session
 from app.dependencies import get_current_user
 from app.services.workflows import WorkflowService
+from app.tenants import DEV_TENANT_ID
 from app.workflows.registry import get_workflow_spec
 from app.workflows.specs import WorkflowContext
 
@@ -156,25 +158,28 @@ async def workflow_event(request: Request, workflow_id: str):
 async def stream(
     request: Request,
     workflow_id: str,
-    token: str,
+    token: str | None = None,
     session: Session = Depends(get_db_session),
 ):
     """Stream workflow status updates via SSE.
 
-    Auth is via the `?token=` query parameter (required), since
-    browser EventSource cannot set custom headers.
+    Auth is via the `?token=` query parameter, since browser EventSource
+    cannot set custom headers.
     """
-    if not token:
-        raise HTTPException(
-            status_code=401,
-            detail="Missing token query parameter",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    if get_settings().auth_off:
+        auth = AuthContext(tenant_id=DEV_TENANT_ID)
+    else:
+        if not token:
+            raise HTTPException(
+                status_code=401,
+                detail="Missing token query parameter",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
 
-    from app.dependencies import get_tenant_registry
+        from app.dependencies import get_tenant_registry
 
-    registry = get_tenant_registry(request)
-    auth = decode_access_token(token, registry)
+        registry = get_tenant_registry(request)
+        auth = decode_access_token(token, registry)
 
     WorkflowService(session).get_authorized_workflow(auth, workflow_id)
 

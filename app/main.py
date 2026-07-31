@@ -23,7 +23,9 @@ from .dependencies import get_current_user
 from .routers import workflow_feedback, workflows
 from .tenants import TenantRegistry
 
-logger = logging.getLogger(__name__)
+# Uvicorn owns the only configured handler. Replacing the config instead
+# double-prints every line the reloader parent logs before this import.
+logger = logging.getLogger("uvicorn.error")
 
 
 @asynccontextmanager
@@ -37,13 +39,13 @@ async def lifespan(app: FastAPI):
         data_converter=pydantic_data_converter,
     )
 
-    # Load tenant registry
-    if not settings.auth_disabled:
-        app.state.tenant_registry = TenantRegistry.from_file(
-            settings.tenants_config_path,
-        )
-    else:
+    if settings.auth_off:
+        logger.warning("Authentication is off, every request runs as the dev tenant.")
         app.state.tenant_registry = TenantRegistry()
+    else:
+        app.state.tenant_registry = TenantRegistry.from_file(
+            settings.tenants_config_path
+        )
 
     yield
     dispose_engine()

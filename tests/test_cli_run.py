@@ -19,6 +19,7 @@ from app.cli.main import (
     _wait_for_temporal,
     app,
 )
+from app.config import get_settings
 
 runner = CliRunner()
 
@@ -135,3 +136,42 @@ def test_stream_output_relays_colour_codes(capsys):
     proc.wait()
 
     assert capsys.readouterr().out == "[worker] \033[31mred\033[0m\n"
+
+
+class StopRun(Exception):
+    """Ends `orcha run` once it has set up its environment."""
+
+
+def stop_run(*args, **kwargs):
+    """Stand in for the migration step so the command goes no further."""
+    raise StopRun
+
+
+def test_run_enables_dev_mode(monkeypatch, tmp_path):
+    """`orcha run` turns DEV_MODE on for the API and worker it spawns."""
+    monkeypatch.delenv("DEV_MODE", raising=False)
+    monkeypatch.setenv("DB_PATH", str(tmp_path / "orcha.db"))
+    monkeypatch.setattr("app.cli.main.shutil.which", lambda _: "/usr/bin/temporal")
+    monkeypatch.setattr("app.cli.main.command.upgrade", stop_run)
+    get_settings.cache_clear()
+
+    result = runner.invoke(app, ["run"])
+
+    assert isinstance(result.exception, StopRun)
+    assert os.environ["DEV_MODE"] == "1"
+    get_settings.cache_clear()
+
+
+def test_run_keeps_an_explicit_dev_mode(monkeypatch, tmp_path):
+    """An explicit DEV_MODE survives `orcha run`."""
+    monkeypatch.setenv("DEV_MODE", "0")
+    monkeypatch.setenv("DB_PATH", str(tmp_path / "orcha.db"))
+    monkeypatch.setattr("app.cli.main.shutil.which", lambda _: "/usr/bin/temporal")
+    monkeypatch.setattr("app.cli.main.command.upgrade", stop_run)
+    get_settings.cache_clear()
+
+    result = runner.invoke(app, ["run"])
+
+    assert isinstance(result.exception, StopRun)
+    assert os.environ["DEV_MODE"] == "0"
+    get_settings.cache_clear()

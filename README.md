@@ -58,9 +58,27 @@ The API uses **multi-tenant RS256 (asymmetric) JWT authentication**. Each tenant
 
 Tenants are identified by the `iss` (issuer) claim in the JWT. To support zero-downtime key rotation, the server allows multiple public keys per tenant. In token headers, tenants must include a Key ID (`kid`) that matches one of their defined keys in the configuration.
 
+### Local development
+
+`orcha run` sets `DEV_MODE`, which turns authentication off: no token is
+required and every request runs as the `dev` tenant, so tenant scoping behaves
+the same as it does anywhere else.
+
+```bash
+uv run orcha run
+curl http://localhost:8000/
+```
+
+`AUTH_DISABLED` overrides that either way, so `AUTH_DISABLED=0 uv run orcha run`
+exercises real tenant tokens against the local stack.
+
+See [Running against a local InvenioRDM](docs/invenio.md) for pointing an
+instance at a local Orcha.
+
 ### Tenant Configuration
 
-Create a `tenants.json` file at the project root:
+Real tenants live in `tenants.json` (override with `TENANTS_CONFIG_PATH`), keyed
+by the `iss` claim their tokens carry:
 
 ```json
 {
@@ -69,74 +87,32 @@ Create a `tenants.json` file at the project root:
     "public_keys": {
       "kid-1": "-----BEGIN PUBLIC KEY-----\nMIIBI...\n-----END PUBLIC KEY-----"
     }
-  },
-  "tenant-b": {
-    "name": "Tenant B",
-    "public_keys": {
-      "kid-1": "-----BEGIN PUBLIC KEY-----\nMIIBI...\n-----END PUBLIC KEY-----"
-    }
   }
 }
 ```
 
-Each key in the JSON must match the `iss` claim the tenant will use in their JWTs.
-
-> ⚠️ **Never commit `tenants.json` or `.pem` files** — they are already in `.gitignore`.
-
-### Generating RSA Keys (Tenant-Side)
-
-Each tenant generates their own key pair and sends you **only the public key**:
+A tenant generates its own key pair and sends you the public half:
 
 ```bash
-# Generate a 2048-bit RSA private key (tenant keeps this secret)
-openssl genpkey -algorithm RSA -out private_key.pem -pkeyopt rsa_keygen_bits:2048
-
-# Extract the public key (send this to the server operator)
-openssl rsa -pubout -in private_key.pem -out public_key.pem
+uv run orcha tenants add tenant-a ./their_public_key.pem
+uv run orcha tenants list
 ```
+
+Pass `--kid` to register a second key alongside the first, and `--force` to
+replace one. `orcha tenants token tenant-a ./private_key.pem` signs a token from
+the tenant side, with `--kid` to pick the key, `--workflow-id` to scope it to
+one workflow and `--expires-in` to set its lifetime in seconds.
+
+> ⚠️ **Never commit `tenants.json` or `.pem` files** — they are already in `.gitignore`.
 
 ### Configuration
 
 | Variable              | Description                              | Required    |
 | --------------------- | ---------------------------------------- | ----------- |
 | `JWT_ALGORITHM`       | Signing algorithm (default: RS256)       | No          |
-| `AUTH_DISABLED`       | Set to `true` to skip auth               | Development |
+| `DEV_MODE`            | Run as the `dev` tenant with auth off    | Development |
+| `AUTH_DISABLED`       | Override the auth switch either way      | Development |
 | `TENANTS_CONFIG_PATH` | Path to tenants JSON (default: tenants.json) | Production  |
-
-**Local development** — bypass authentication entirely:
-
-```bash
-export AUTH_DISABLED=true
-```
-
-### Creating a Test Token (Tenant-Side)
-
-Tokens **must** include the `iss` claim matching the tenant ID. Optionally include `workflow_id` to scope access.
-
-```python
-import jwt
-from datetime import datetime, timedelta, timezone
-
-private_key = open("private_key.pem").read()
-
-token = jwt.encode(
-    {
-        "iss": "tenant-a",                                    # Required: must match tenants.json key
-        "workflow_id": "YOUR_WORKFLOW_ID",                    # Optional: scope to a specific workflow
-        "exp": datetime.now(timezone.utc) + timedelta(hours=1)
-    },
-    private_key,
-    algorithm="RS256",
-    headers={"kid": "kid-1"}                                  # Required: must match kid in tenants.json public_keys
-)
-print(token)
-```
-
-Use the token:
-
-```bash
-curl -H "Authorization: Bearer <token>" http://localhost:8000/workflows/<YOUR_WORKFLOW_ID>
-```
 
 ### LLM Configuration
 
@@ -177,6 +153,9 @@ export OLLAMA_BASE_URL="http://localhost:11434/v1"
 | `orcha run server --dev`           | Start the FastAPI server with hot reload  |
 | `orcha run workers`                | Start Temporal worker for default queue   |
 | `orcha run workers --task-queue Q` | Start Temporal worker for a specific queue |
+| `orcha tenants list`               | List registered tenants and their key IDs |
+| `orcha tenants add T KEY.pem`      | Register a tenant's public key            |
+| `orcha tenants token T KEY.pem`    | Sign a token for a tenant                 |
 
 ## Database Migrations
 
