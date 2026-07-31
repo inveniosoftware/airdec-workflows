@@ -7,7 +7,7 @@ metadata:
 data:
   JWT_ALGORITHM: {{ .Values.appConfig.jwtAlgorithm | quote }}
   AUTH_DISABLED: {{ .Values.appConfig.authDisabled | quote }}
-  TENANTS_CONFIG_PATH: {{ .Values.appConfig.tenantsConfigPath | quote }}
+  TENANTS_CONFIG_PATH: {{ printf "%s/tenants.json" .Values.tenants.mountPath | quote }}
   ALLOWED_ORIGINS: {{ .Values.appConfig.allowedOrigins | quote }}
   LANGFUSE_ENABLED: {{ .Values.appConfig.langfuseEnabled | quote }}
   {{- if .Values.appConfig.langfuseBaseUrl }}
@@ -29,3 +29,15 @@ data:
   {{- end }}
   LITELLM_API_BASE: {{ .Values.llmConfig.litellmApiBase | quote }}
   OLLAMA_BASE_URL: {{ .Values.llmConfig.ollamaBaseUrl | quote }}
+
+{{- if .Values.tenants.config }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "orcha.fullname" . }}-tenants-config
+  labels:
+    {{- include "orcha.labels" . | nindent 4 }}
+data:
+  tenants.json: {{ .Values.tenants.config | toJson | quote }}
+{{- end }}

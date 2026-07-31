@@ -198,20 +198,26 @@ tolerations: []
 
 affinity: {}
 
-# Persistent storage for tenants config
-persistence:
-  tenants:
-    enabled: true
-    accessMode: ReadWriteOnce
-    size: 64Mi
-    storageClass: ""
-    mountPath: /data/tenants
+# Tenant configuration (RSA public keys per tenant for JWT authentication).
+# Each key in config becomes a tenant entry in tenants.json.
+# Example:
+# tenants:
+#   config:
+#     zenodo:
+#       name: "Zenodo"
+#       public_keys:
+#         kid-1: |
+#           -----BEGIN PUBLIC KEY-----
+#           MIIBIjAN...
+#           -----END PUBLIC KEY-----
+tenants:
+  mountPath: /etc/orcha/tenants
+  config: {}
 
 # Application-specific environment variables
 appConfig:
   jwtAlgorithm: "RS256"
   authDisabled: "False"
-  tenantsConfigPath: "/data/tenants/tenants.json"
   allowedOrigins: '["http://localhost:3000","http://127.0.0.1:3000"]'
   langfuseEnabled: "False"
   langfuseBaseUrl: ""
