@@ -150,20 +150,26 @@ For more information on how authentication is set up for Orcha, visit our [READM
 By default, auth is enabled in Orcha.
 :::
 
-For deployment, we handle the tenants file via a Permanent Volume Claim, which requires writing or copying the `tenants.json` file to the path mounting the PVC.
+Tenant configuration (RSA public keys) is managed as part of the Helm release via the `tenants.config` value. Add each tenant's public key to your environment values file:
 
-For example, to copy the file from your local machine:
-```bash
-oc cp ./tenants.json <namespace>/<pod-name>:/data/tenants/tenants.json
+```yaml
+tenants:
+  config:
+    my-tenant:
+      name: "My Tenant"
+      public_keys:
+        kid-1: |
+          -----BEGIN PUBLIC KEY-----
+          MIIBIjAN...
+          -----END PUBLIC KEY-----
 ```
 
-Since the Tenant registry is loaded once at startup and cached, we need to restart the deployment:
+Since the tenant registry is loaded once at startup, adding, updating, or removing a tenant requires a `helm upgrade` followed by a rolling restart:
 
 ```bash
-oc rollout restart deployment/<deployment> -n <namespace>
+helm upgrade orcha ./charts/orcha -f values-<env>.yaml -n <namespace>
+kubectl rollout restart deployment/<deployment> -n <namespace>
 ```
-
-Once that is done, the file only needs to be touched again if we need to add/update/remove tenants. Otherwise, the PVC persists independently of the pod lifecycle.
 
 ### Temporal namespaces
 The first time we deploy Temporal, no namespace exists within the application. To create it:
@@ -247,10 +253,6 @@ helm upgrade orcha ./charts/orcha \
 helm uninstall orcha -n <namespace>
 ```
 
-> PersistentVolumeClaims are **not** deleted automatically. To remove them:
-> ```bash
-> kubectl delete pvc -l app.kubernetes.io/instance=orcha -n <namespace>
-> ```
 
 ---
 

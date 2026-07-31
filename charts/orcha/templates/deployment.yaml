@@ -25,11 +25,11 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .Values.persistence.tenants.enabled }}
+      {{- if .Values.tenants.config }}
       volumes:
         - name: tenants-config
-          persistentVolumeClaim:
-            claimName: {{ include "orcha.fullname" . }}-tenants
+          configMap:
+            name: {{ include "orcha.fullname" . }}-tenants-config
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
@@ -83,10 +83,11 @@ spec:
             {{- with (include "orcha.langfuseEnv" .) }}
             {{- . | trimAll "\n" | nindent 12 }}
             {{- end }}
-          {{- if .Values.persistence.tenants.enabled }}
+          {{- if .Values.tenants.config }}
           volumeMounts:
             - name: tenants-config
-              mountPath: {{ .Values.persistence.tenants.mountPath }}
+              mountPath: {{ .Values.tenants.mountPath }}
+              readOnly: true
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
