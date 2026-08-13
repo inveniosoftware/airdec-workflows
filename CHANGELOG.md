@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-13
+
 ### Features
 - `orcha run` runs the complete local stack: migrations, a Temporal dev server, the API, and a worker, with prefixed logs and shared teardown
   - Requires the `temporal` CLI; `--reset` deletes `orcha.db`/`temporal.db` first, a normal shutdown preserves them
@@ -14,6 +16,7 @@
 - *(cli)* Add `orcha tenants` for the tenant registry
   - `add` registers a tenant's public key, `list` shows what is registered
   - `token` signs a token for a tenant from its private key
+- Add evals pipeline to Orcha
 
 ## [0.4.0] - 2026-07-30
 
@@ -118,7 +121,8 @@
 ## [0.0.1] - 2026-06-09
 _First release._
 
-[unreleased]: https://github.com/inveniosoftware/orcha/compare/v0.4.0...HEAD
+[unreleased]: https://github.com/inveniosoftware/orcha/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/inveniosoftware/orcha/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/inveniosoftware/orcha/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/inveniosoftware/orcha/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/inveniosoftware/orcha/compare/v0.2.1...v0.2.2
