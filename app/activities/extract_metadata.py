@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from temporalio import activity
 from temporalio.common import RetryPolicy
 
-from app.activities._llm import build_agent
+from app.agent import build_agent
 from app.config import get_settings
 from app.observability import propagate_langfuse_context
 from app.schemas.metadata_suggestions import ExtractedMetadata, MetadataSuggestions
