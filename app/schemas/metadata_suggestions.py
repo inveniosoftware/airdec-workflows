@@ -50,6 +50,26 @@ class Creator(BaseModel):
         return f"{family}, {given}"
 
 
+class Funding(BaseModel):
+    """A structured funding/grant."""
+
+    funder: str | None = Field(
+        default=None,
+        description="Name of the funding organization or agency",
+        examples=["European Commission", "NSF", "Wellcome Trust"],
+    )
+    award_number: str | None = Field(
+        default=None,
+        description="Number of the grant agreement",
+        examples=["101058509", "2410342"],
+    )
+    award_title: str | None = Field(
+        default=None,
+        description="Name of funding award, project or grant",
+        examples=["SCOAP3", "ObsSea4Clim", "European Citizen Science"],
+    )
+
+
 class TitleSuggestion(BaseModel):
     """Suggestion for `title`."""
 
@@ -97,12 +117,42 @@ class PublicationDateSuggestion(BaseModel):
         return " ".join(v.split()).strip()
 
 
+class LicenseSuggestion(BaseModel):
+    """Suggestion for `license` ."""
+
+    field: Literal["license"] = "license"
+    value: list[str]
+
+    @field_validator("value")
+    @classmethod
+    def lowercase_licenses(cls, licenses: list[str]) -> list[str]:
+        """Set SPDX id of licenses to lowercase."""
+        return [lic.lower() for lic in licenses]
+
+
+class FundingSuggestion(BaseModel):
+    """Suggestion for `funding` (awards/grants)."""
+
+    field: Literal["funding"] = "funding"
+    value: list[Funding]
+
+
+class CopyrightSuggestion(BaseModel):
+    """Suggestion for `copyright` ."""
+
+    field: Literal["copyright"] = "copyright"
+    value: str
+
+
 MetadataSuggestion = Annotated[
     TitleSuggestion
     | DescriptionSuggestion
     | CreatorsSuggestion
     | DoiSuggestion
-    | PublicationDateSuggestion,
+    | PublicationDateSuggestion
+    | LicenseSuggestion
+    | FundingSuggestion
+    | CopyrightSuggestion,
     Field(discriminator="field"),
 ]
 
@@ -181,6 +231,54 @@ class ExtractedMetadata(BaseModel):
         ),
         examples=["2014-07-17", "2014-07", "2014"],
     )
+    license: list[str] = Field(
+        default_factory=list,
+        description=(
+            "SPDX id of the license. Might be preceded by 'licensed under'. Translate "
+            "license names to the SPDX id. For example, 'Creative Commons Attribution "
+            "4.0 International' should be returned as 'cc-by-4.0'."
+        ),
+        examples=[["mit", "apache-2.0", "cc-by-4.0", "gpl-3.0-only"]],
+    )
+    funding: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Name of funding awards or projects financing the research. Strip "
+            "any surrounding phrases ('funded by', 'funded under', 'with support "
+            "from', etc.) and trailing punctuation. Prefer this field over `funder` "
+            "unless only a funding organization with no specific project is available."
+        ),
+        examples=[["SCOAP3", "ObsSea4Clim", "European Citizen Science (ECS)"]],
+    )
+    funding_funders: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Funding organization or agency names, parallel to `funding` so "
+            "funding_funders[i] is the funder of funding[i]; empty string if "
+            "the funder is not stated. Only set this when there is a distinct "
+            "funding body separate and different from the award."
+        ),
+        examples=[["European Commission", "NSF", ""]],
+    )
+    funding_numbers: list[str] = Field(
+        default_factory=list,
+        description=(
+            "List of funding numbers or grant agreements, parallel to `funding` so "
+            "funding_numbers[i] is the grant agreement of funding[i]; empty string "
+            "if there is no grant agreement stated. Might be preceded by expressions "
+            "such as 'grant agreement' or 'GA nr.' or 'project no.'."
+        ),
+        examples=[["101058509", "2410342", "801954"]],
+    )
+    copyright: str | None = Field(
+        default=None,
+        description=(
+            "Copyright statement. Often follows '© Copyright' and might include a "
+            "year, which should also be returned. Do not include the © symbol, the "
+            "word 'Copyright' itself, or any '(cid:N)' sequences."
+        ),
+        examples=["2025 CERN", "The Authors", "2020 Jane Doe", "The Authors 1999"],
+    )
 
     @staticmethod
     def _at(values: list[str], i: int) -> str:
@@ -215,4 +313,27 @@ class ExtractedMetadata(BaseModel):
             suggestions.append(DoiSuggestion(value=self.doi))
         if self.publication_date:
             suggestions.append(PublicationDateSuggestion(value=self.publication_date))
+        if self.license:
+            suggestions.append(LicenseSuggestion(value=self.license))
+        if self.funding or self.funding_funders or self.funding_numbers:
+            size = max(
+                len(self.funding), len(self.funding_funders), len(self.funding_numbers)
+            )
+            value = []
+            for i in range(size):
+                title = self._at(self.funding, i)
+                funder = self._at(self.funding_funders, i)
+                number = self._at(self.funding_numbers, i)
+                entry = Funding(
+                    funder=funder or None,
+                    award_title=title or None,
+                    award_number=number or None,
+                )
+                if entry.funder or entry.award_title or entry.award_number:
+                    value.append(entry)
+            fundings = FundingSuggestion(value=value)
+            if fundings.value:
+                suggestions.append(fundings)
+        if self.copyright:
+            suggestions.append(CopyrightSuggestion(value=self.copyright))
         return MetadataSuggestions(suggestions=suggestions)
