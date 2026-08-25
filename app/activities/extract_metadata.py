@@ -16,7 +16,7 @@ from temporalio.common import RetryPolicy
 from app.agent import build_agent
 from app.config import get_settings
 from app.observability import propagate_langfuse_context
-from app.schemas.metadata_suggestions import ExtractedMetadata, MetadataSuggestions
+from app.schemas.metadata_suggestions import ExtractedMetadata
 from app.workflows.specs import WorkflowContext
 
 EXTRACT_METADATA_RETRY_POLICY = RetryPolicy(
@@ -97,15 +97,15 @@ def _clear_absent_fields(output: ExtractedMetadata, text: str) -> None:
 async def extract_metadata_with_llm(
     request: ExtractMetadataRequest,
     context: WorkflowContext,
-) -> MetadataSuggestions:
-    """Generate typed metadata suggestions using an LLM."""
+) -> ExtractedMetadata:
+    """Extract raw metadata suggestions using an LLM."""
     if len(request.text.strip()) < MIN_TEXT_CHARS:
         # No usable text: skip the LLM entirely rather than let it fabricate.
-        return MetadataSuggestions(suggestions=[])
+        return ExtractedMetadata()
 
     agent = build_agent(get_settings().llm, ExtractedMetadata, INSTRUCTIONS)
     with propagate_langfuse_context(context, trace_name="extract_metadata"):
         result = await agent.run(request.text)
 
     _clear_absent_fields(result.output, request.text)
-    return result.output.to_suggestions()
+    return result.output
