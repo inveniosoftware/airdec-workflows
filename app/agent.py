@@ -22,6 +22,8 @@ _JSON_ONLY = (
     "Respond immediately; do not deliberate. "
     "Reply with exactly one JSON object matching the schema and nothing else."
 )
+# Retries for output validation errors
+_OUTPUT_RETRIES = 2
 
 
 def _parse_llm(llm: str) -> tuple[str, str]:
@@ -62,5 +64,11 @@ def build_agent(llm: str, output_type: type[T], instructions: str) -> Agent[None
             model,
             instructions=[_REASONING_LOW, instructions, _JSON_ONLY],
             output_type=PromptedOutput(output_type),
+            output_retries=_OUTPUT_RETRIES,
         )
-    return Agent[None, T](model, instructions=instructions, output_type=output_type)
+    return Agent[None, T](
+        model,
+        instructions=instructions,
+        output_type=output_type,
+        output_retries=_OUTPUT_RETRIES,
+    )
