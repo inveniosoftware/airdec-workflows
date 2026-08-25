@@ -221,7 +221,8 @@ appConfig:
   allowedOrigins: '["http://localhost:3000","http://127.0.0.1:3000"]'
   langfuseEnabled: "False"
   langfuseBaseUrl: ""
-  pdfHttpAllowlist: ""
+  httpAllowlist: ""
+  invenioBaseUrl: ""
 
 # LLM-specific configuration
 llmConfig:

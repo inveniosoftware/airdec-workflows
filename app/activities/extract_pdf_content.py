@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 from datetime import timedelta
-from urllib.parse import urlparse
 
 import httpx
 from pydantic import BaseModel
@@ -10,7 +9,7 @@ from temporalio import activity
 from temporalio.common import RetryPolicy
 from temporalio.exceptions import ApplicationError
 
-from app.config import get_settings
+from app.activities.utils import http_verify
 from app.extractors import get_extractor
 from app.extractors.errors import InvalidPageSelectionError
 
@@ -38,34 +37,13 @@ class ExtractPdfContentResponse(BaseModel):
     pages_extracted: list[int]  # List of 1-indexed page numbers that were extracted
 
 
-def _http_verify_for_pdf_url(url: str) -> bool:
-    settings = get_settings()
-
-    parsed_url = urlparse(url)
-    hostname = (parsed_url.hostname or "").lower()
-
-    if hostname in ("localhost", "127.0.0.1", "::1") or hostname.endswith(".localhost"):
-        return False
-
-    allowlist = {
-        host.strip().lower()
-        for host in (settings.pdf_http_allowlist or "").split(",")
-        if host.strip()
-    }
-
-    if hostname not in allowlist:
-        raise ValueError(f"PDF downloads from '{hostname}' are not allowed")
-
-    return True
-
-
 @activity.defn
 async def extract_pdf_text(
     request: ExtractPdfContentRequest,
 ) -> ExtractPdfContentResponse:
     """Download PDF from a URL and extract its content using the specified extractor."""
     try:
-        verify = _http_verify_for_pdf_url(request.url)
+        verify = http_verify(request.url)
     except ValueError as e:
         raise ApplicationError(
             str(e),
