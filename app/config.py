@@ -75,6 +75,9 @@ class Settings(BaseSettings):
     langfuse_secret_key: str | None = None
     langfuse_base_url: str | None = None
 
+    # Invenio instance to resolve funders, awards, and licenses against
+    invenio_base_url: str | None = None
+
     # PDF downloads
     pdf_http_allowlist: str | None = None
 

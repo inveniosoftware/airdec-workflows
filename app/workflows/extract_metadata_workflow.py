@@ -4,9 +4,7 @@
 from datetime import timedelta
 
 from pydantic import Field, HttpUrl
-from pydantic_ai.durable_exec.temporal import (
-    PydanticAIWorkflow,
-)
+from pydantic_ai.durable_exec.temporal import PydanticAIWorkflow
 from temporalio import workflow
 
 from app.activities.extract_metadata import (
@@ -19,6 +17,11 @@ from app.activities.extract_pdf_content import (
     ExtractPdfContentRequest,
     extract_pdf_text,
 )
+from app.activities.resolve_metadata import (
+    RESOLVE_METADATA_RETRY_POLICY,
+    ResolveMetadataRequest,
+    resolve_metadata_suggestions,
+)
 from app.activities.update_workflow import (
     UPDATE_WORKFLOW_RETRY_POLICY,
     WorkflowUpdateRequest,
@@ -26,10 +29,7 @@ from app.activities.update_workflow import (
 )
 from app.database.models import WorkflowStatus
 from app.schemas.metadata_suggestions import MetadataSuggestions
-from app.workflows.specs import (
-    WorkflowContext,
-    WorkflowParams,
-)
+from app.workflows.specs import WorkflowContext, WorkflowParams
 
 
 class ExtractMetadataParams(WorkflowParams):
@@ -75,12 +75,20 @@ class ExtractMetadata(PydanticAIWorkflow):
                 retry_policy=EXTRACT_PDF_TEXT_RETRY_POLICY,
             )
 
-            # Activity 2: Generate metadata suggestions using LLM
-            result = await workflow.execute_activity(
+            # Activity 2: Generate raw metadata suggestions using LLM
+            metadata = await workflow.execute_activity(
                 extract_metadata_with_llm,
                 args=[ExtractMetadataRequest(text=content.text), context],
                 start_to_close_timeout=timedelta(minutes=5),
                 retry_policy=EXTRACT_METADATA_RETRY_POLICY,
+            )
+
+            # Activity 3: Resolve funders, awards, and licenses; format suggestions
+            result = await workflow.execute_activity(
+                resolve_metadata_suggestions,
+                ResolveMetadataRequest(metadata=metadata),
+                start_to_close_timeout=timedelta(minutes=3),
+                retry_policy=RESOLVE_METADATA_RETRY_POLICY,
             )
         except Exception:
             await workflow.execute_activity(
