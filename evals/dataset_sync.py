@@ -97,10 +97,6 @@ def _get(
         stream=stream,
         timeout=(30, 3600),
     )
-    if response.status_code >= 400:
-        raise DatasetSyncError(
-            f"GET {url} failed with {response.status_code}: {response.text[:1000]}"
-        )
     return response
 
 
@@ -307,18 +303,23 @@ def sync_dataset(
     manifest_bytes = _get(f"{raw_base}/manifest.json", token=token).content
     manifest = json.loads(manifest_bytes)
     _entries(manifest)
-    state = _get(f"{raw_base}/.zenodo-record.json", token=token).json()
+    resp = _get(f"{raw_base}/.zenodo-record.json", token=token)
+    if resp.status_code == 404:
+        state = {}
+        print("Zenodo dataset not found. Downloading from GitHub repo...")
+    else:
+        state = resp.json()
+        _seed_zenodo(cache, state, zenodo_base)
 
-    _seed_zenodo(cache, state, zenodo_base)
     _fetch_current_objects(cache, manifest, repo, commit, token)
 
     provenance = {
         "dataset_git_commit": commit,
         "dataset_manifest_sha256": _sha256_bytes(manifest_bytes),
         "dataset_repo": repo,
-        "dataset_version": state["version"],
-        "zenodo_doi": state["latest_doi"],
-        "zenodo_record_id": state["latest_recid"],
+        "dataset_version": state.get("version"),
+        "zenodo_doi": state.get("latest_doi"),
+        "zenodo_record_id": state.get("latest_recid"),
     }
     return _materialize(target, cache, manifest, provenance), provenance
 
