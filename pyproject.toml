@@ -31,7 +31,7 @@ orcha = "app.cli.main:app"
 
 [project.optional-dependencies]
 langfuse = [
-    "langfuse>=4.7.0",
+    "langfuse>=4.7.0,<4.10.0",
 ]
 
 [build-system]

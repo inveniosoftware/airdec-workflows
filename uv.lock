@@ -1228,7 +1228,7 @@ wheels = [
 
 [[package]]
 name = "langfuse"
-version = "4.11.0"
+version = "4.9.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "backoff" },
@@ -1240,9 +1240,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/63/cb/a69cfdc86c3d1893dc280ef28737fb750e93804382c7d7cca96331044f41/langfuse-4.11.0.tar.gz", hash = "sha256:bfa6b05d2a68376257728db860f15736051725c56945d5099038e38731b79b61", size = 346574, upload-time = "2026-06-24T07:58:14.212Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0e/9a/c2e4b5c33a225a0158de0e774396823612a6c5beea21cde42e95b196c398/langfuse-4.9.1.tar.gz", hash = "sha256:e3d7162a8004f71abd6ad90fba2f3a7d0088cbdce1c77deea521837d49580ab4", size = 339957, upload-time = "2026-06-19T09:30:49.841Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c2/12/85deb81519bf6d1697875b1b68f00f7ae2e1da38baeed3b105a2ded73e8d/langfuse-4.11.0-py3-none-any.whl", hash = "sha256:aca7eab5ae94e7763b3ebe5ab0aeca677b165ea4fe9790be03513935d39196bd", size = 607683, upload-time = "2026-06-24T07:58:15.529Z" },
+    { url = "https://files.pythonhosted.org/packages/15/9e/2b21989730ebb613118a667e59f652aebb5a1ca07de10984bf28a02a888f/langfuse-4.9.1-py3-none-any.whl", hash = "sha256:3feb00679aff2ff45b0e786574c748d7c40d23768452e17e3a02e8706b7cbce3", size = 599839, upload-time = "2026-06-19T09:30:48.4Z" },
 ]
 
 [[package]]
@@ -1699,7 +1699,7 @@ requires-dist = [
     { name = "fastapi-limiter", specifier = ">=0.2.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "idutils", specifier = ">=1.6.1" },
-    { name = "langfuse", marker = "extra == 'langfuse'", specifier = ">=4.7.0" },
+    { name = "langfuse", marker = "extra == 'langfuse'", specifier = ">=4.7.0,<4.10.0" },
     { name = "nanoid", specifier = ">=2.0.0" },
     { name = "pdfplumber", specifier = ">=0.11.9" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.4" },
