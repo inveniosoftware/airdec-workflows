@@ -13,8 +13,11 @@ data:
   {{- if .Values.appConfig.langfuseBaseUrl }}
   LANGFUSE_BASE_URL: {{ .Values.appConfig.langfuseBaseUrl | quote }}
   {{- end }}
-  {{- if .Values.appConfig.pdfHttpAllowlist }}
-  PDF_HTTP_ALLOWLIST: {{ .Values.appConfig.pdfHttpAllowlist | quote }}
+  {{- if .Values.appConfig.httpAllowlist }}
+  HTTP_ALLOWLIST: {{ .Values.appConfig.httpAllowlist | quote }}
+  {{- end }}
+  {{- if .Values.appConfig.invenioBaseUrl }}
+  INVENIO_BASE_URL: {{ .Values.appConfig.invenioBaseUrl | quote }}
   {{- end }}
 ---
 apiVersion: v1

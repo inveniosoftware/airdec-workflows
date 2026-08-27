@@ -58,6 +58,7 @@ class Settings(BaseSettings):
 
     # Security
     allowed_origins: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    http_allowlist: str | None = None
 
     # LLM
     # TODO Currently we have only a single workflow, so single LLM configuration
@@ -75,8 +76,8 @@ class Settings(BaseSettings):
     langfuse_secret_key: str | None = None
     langfuse_base_url: str | None = None
 
-    # PDF downloads
-    pdf_http_allowlist: str | None = None
+    # Invenio instance to resolve funders, awards, and licenses against
+    invenio_base_url: str | None = None
 
     @property
     def auth_off(self) -> bool:

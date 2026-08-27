@@ -18,7 +18,7 @@ from app.activities.extract_metadata import (
     _clear_absent_fields,
     extract_metadata_with_llm,
 )
-from app.schemas.metadata_suggestions import ExtractedMetadata
+from app.schemas.metadata_suggestions import ExtractedMetadata, MetadataSuggestions
 from app.workflows.specs import WorkflowContext
 
 SOURCE = (
@@ -100,4 +100,5 @@ def test_skip_empty_returns_no_suggestions(text):
     request = ExtractMetadataRequest(text=text)
     context = WorkflowContext(workflow_id="wf-1", tenant_id="t-1")
     result = asyncio.run(extract_metadata_with_llm(request, context))
-    assert result.suggestions == []
+    raw_suggestions = MetadataSuggestions.from_extracted(result)
+    assert raw_suggestions.suggestions == []

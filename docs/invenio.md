@@ -36,7 +36,7 @@ unsigned under `RDM_ORCHA_DEV_MODE`,
 so `SITE_UI_URL` has to resolve from wherever Orcha runs.
 TLS verification is skipped for `localhost`, `127.0.0.1` and `::1`,
 which covers the usual self-signed development certificate.
-Any other host has to appear in `PDF_HTTP_ALLOWLIST`.
+Any other host has to appear in `HTTP_ALLOWLIST`.
 
 ## Enabling the deposit form button
 
