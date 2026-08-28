@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 import re
+import sys
 import tempfile
 import zipfile
 from collections.abc import Iterable
@@ -85,11 +86,16 @@ def _headers(token: str | None = None) -> dict[str, str]:
     return headers
 
 
+def _progress(message: str) -> None:
+    print(message, file=sys.stderr, flush=True)
+
+
 def _get(
     url: str,
     *,
     token: str | None = None,
     stream: bool = False,
+    allow_not_found: bool = False,
 ) -> requests.Response:
     response = requests.get(
         url,
@@ -97,6 +103,10 @@ def _get(
         stream=stream,
         timeout=(30, 3600),
     )
+    if not response.ok and not (allow_not_found and response.status_code == 404):
+        detail = response.text.strip()
+        suffix = f": {detail}" if detail else ""
+        raise DatasetSyncError(f"GET {url} failed with {response.status_code}{suffix}")
     return response
 
 
@@ -166,6 +176,7 @@ def _seed_archive(
         for entry in _missing(cache, entries):
             try:
                 with archive.open(entry["path"]) as source:
+                    _progress(f"Caching {entry['path']} from Zenodo archive")
                     _store_object(source, cache, entry)
             except KeyError as error:
                 raise DatasetSyncError(f"Archive is missing {entry['path']}") from error
@@ -177,6 +188,7 @@ def _download_archive(
     destination: Path,
 ) -> Path:
     destination.parent.mkdir(parents=True, exist_ok=True)
+    _progress(f"Fetching Zenodo archive: {url}")
     response = _get(url, stream=True)
     digest = hashlib.md5()
     with tempfile.NamedTemporaryFile(dir=destination.parent, delete=False) as target:
@@ -236,9 +248,19 @@ def _fetch_current_objects(
     token: str | None,
 ) -> None:
     for entry in _missing(cache, _entries(manifest)):
+        _progress(f"Fetching {entry['path']} from GitHub")
         path = quote(entry["path"], safe="/")
         base = GITHUB_MEDIA if entry["path"].startswith("files/") else GITHUB_RAW
-        response = _get(f"{base}/{repo}/{commit}/{path}", token=token, stream=True)
+        response = _get(
+            f"{base}/{repo}/{commit}/{path}",
+            token=token,
+            stream=True,
+            allow_not_found=True,
+        )
+        if response.status_code == 404:
+            _progress(f"GET {response.url} failed with 404")
+            response.close()
+            continue
         with response.raw as source:
             source.decode_content = True
             _store_object(source, cache, entry)
@@ -257,24 +279,53 @@ def _materialize(
         previous = json.loads(state_path.read_text(encoding="utf-8"))
 
     entries = _entries(manifest)
+    missing_paths = {entry["path"] for entry in _missing(cache, entries)}
+    skipped_paths = set()
+    for record in manifest["records"].values():
+        record_paths = {
+            record["document"]["path"],
+            record["metadata"]["path"],
+        }
+        if record_paths & missing_paths:
+            skipped_paths.update(record_paths)
+    entries = [entry for entry in entries if entry["path"] not in skipped_paths]
     current_paths = {entry["path"] for entry in entries}
     previous_paths = set(previous.get("managed_paths", []))
-    for stale in previous_paths - current_paths:
+    for stale in sorted(previous_paths - current_paths):
         stale_path = target / stale
-        if stale_path.is_symlink():
+        if stale_path.is_symlink() or stale_path.is_file():
+            _progress(f"Removing stale {stale}")
             stale_path.unlink()
 
     for entry in entries:
         destination = target / entry["path"]
         source = _object_path(cache, entry["sha256"])
         destination.parent.mkdir(parents=True, exist_ok=True)
-        if destination.is_symlink() and destination.resolve() == source.resolve():
-            continue
-        if destination.is_symlink() and entry["path"] in previous_paths:
-            destination.unlink()
+        replace_managed_link = (
+            destination.is_symlink() and entry["path"] in previous_paths
+        )
         if destination.exists() or destination.is_symlink():
-            raise DatasetSyncError(f"Refusing to replace unmanaged file: {destination}")
-        destination.symlink_to(os.path.relpath(source, destination.parent))
+            if (
+                entry["path"] in previous_paths
+                and not destination.is_symlink()
+                and destination.is_file()
+                and destination.samefile(source)
+            ):
+                continue
+            if not replace_managed_link:
+                raise DatasetSyncError(
+                    f"Refusing to replace unmanaged file: {destination}"
+                )
+        _progress(f"Hard-linking {entry['path']}")
+        try:
+            with tempfile.TemporaryDirectory(dir=destination.parent) as temporary_dir:
+                temporary = Path(temporary_dir) / "object"
+                os.link(source, temporary)
+                temporary.replace(destination)
+        except OSError as error:
+            raise DatasetSyncError(
+                f"Could not hard-link {destination} to cache object {source}: {error}"
+            ) from error
 
     materialized = {**provenance, "managed_paths": sorted(current_paths)}
     state_path.write_text(json.dumps(materialized, indent=2) + "\n", encoding="utf-8")
@@ -297,16 +348,19 @@ def sync_dataset(
     )
     target = target or cache / "dataset"
     token = os.environ.get("GITHUB_TOKEN")
+    _progress(f"Resolving {repo}@{ref}")
     commit = _resolve_commit(repo, ref, token)
+    _progress(f"Using dataset commit {commit}")
 
     raw_base = f"{GITHUB_RAW}/{repo}/{commit}"
+    _progress("Fetching manifest.json")
     manifest_bytes = _get(f"{raw_base}/manifest.json", token=token).content
     manifest = json.loads(manifest_bytes)
     _entries(manifest)
-    resp = _get(f"{raw_base}/.zenodo-record.json", token=token)
+    resp = _get(f"{raw_base}/.zenodo-record.json", token=token, allow_not_found=True)
     if resp.status_code == 404:
         state = {}
-        print("Zenodo dataset not found. Downloading from GitHub repo...")
+        _progress("Zenodo dataset not found; fetching from GitHub")
     else:
         state = resp.json()
         _seed_zenodo(cache, state, zenodo_base)
@@ -333,12 +387,16 @@ def main() -> None:
     parser.add_argument("--target", type=Path)
     args = parser.parse_args()
 
-    target, provenance = sync_dataset(
-        repo=args.repo,
-        ref=args.ref,
-        cache=args.cache,
-        target=args.target,
-    )
+    try:
+        target, provenance = sync_dataset(
+            repo=args.repo,
+            ref=args.ref,
+            cache=args.cache,
+            target=args.target,
+        )
+    except DatasetSyncError as error:
+        print(f"DatasetSyncError: {error}", file=sys.stderr)
+        raise SystemExit(1) from None
     print(f"Dataset ready at {target}")
     print(json.dumps(provenance, indent=2))
 
