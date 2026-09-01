@@ -3,6 +3,7 @@
 
 import re
 from difflib import SequenceMatcher
+from itertools import zip_longest
 from typing import Any
 
 from langfuse import Evaluation
@@ -23,6 +24,24 @@ def norm_doi(doi: Any) -> str:
     """Normalize a DOI by removing common prefixes."""
     doi = str(doi or "").strip().lower()
     return re.sub(r"^(https?://)?(dx\.)?doi\.org/|^doi:\s*", "", doi)
+
+
+def creator_records(source: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return creator rows in the flat app schema."""
+    return [
+        {
+            "name": name,
+            "orcid": orcid,
+            "affiliation": [{"name": affiliation}] if affiliation else [],
+        }
+        for name, orcid, affiliation in zip_longest(
+            source.get("creators") or [],
+            source.get("creator_orcids") or [],
+            source.get("creator_affiliations") or [],
+            fillvalue="",
+        )
+        if name or orcid or affiliation
+    ]
 
 
 def sym_score(exp_vals: list, pred_vals: list, sim: Any) -> tuple[float, bool]:
@@ -223,7 +242,7 @@ class Evaluator:
     def creators_eval(self) -> dict[str, dict[str, Any]]:
         """Compare predicted creator names, ORCIDs, and affiliations."""
         exp_creators = self.exp.get("creators", [])
-        pred_creators = self.pred.get("creators", [])
+        pred_creators = creator_records(self.pred)
 
         results: dict[str, dict[str, Any]] = {}
 

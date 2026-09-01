@@ -93,19 +93,24 @@ def _clear_absent_fields(output: ExtractedMetadata, text: str) -> None:
                 output.doi = None
 
 
+async def extract_metadata_record(text: str) -> ExtractedMetadata:
+    """Shared metadata extraction helper without Temporal dependencies."""
+    if len(text.strip()) < MIN_TEXT_CHARS:
+        # No usable text: skip the LLM entirely rather than let it fabricate.
+        return ExtractedMetadata()
+
+    agent = build_agent(get_settings().llm, ExtractedMetadata, INSTRUCTIONS)
+    result = await agent.run(text)
+    _clear_absent_fields(result.output, text)
+    return result.output
+
+
 @activity.defn
 async def extract_metadata_with_llm(
     request: ExtractMetadataRequest,
     context: WorkflowContext,
 ) -> MetadataSuggestions:
     """Generate typed metadata suggestions using an LLM."""
-    if len(request.text.strip()) < MIN_TEXT_CHARS:
-        # No usable text: skip the LLM entirely rather than let it fabricate.
-        return MetadataSuggestions(suggestions=[])
-
-    agent = build_agent(get_settings().llm, ExtractedMetadata, INSTRUCTIONS)
     with propagate_langfuse_context(context, trace_name="extract_metadata"):
-        result = await agent.run(request.text)
-
-    _clear_absent_fields(result.output, request.text)
-    return result.output.to_suggestions()
+        record = await extract_metadata_record(request.text)
+    return record.to_suggestions()

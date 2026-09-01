@@ -10,7 +10,7 @@ def test_creator_score_penalizes_missing_expected_authors():
     """Missing expected authors reduce the creator score."""
     result = Evaluator(
         {"expected_output": {"creators": [{"name": "Alice"}, {"name": "Zorro"}]}},
-        {"creators": [{"name": "Alice"}]},
+        {"creators": ["Alice"]},
     ).creators_eval()
 
     assert result["creators_name"]["score"] == pytest.approx(2 / 3)
@@ -64,10 +64,8 @@ def test_creator_attributes_stay_attached_to_their_authors():
         ]
     }
     predicted = {
-        "creators": [
-            {"name": "Jane Doe", "orcid": "0000-0002-1825-0097"},
-            {"name": "John Smith", "orcid": "0000-0002-1111-1115"},
-        ]
+        "creators": ["Jane Doe", "John Smith"],
+        "creator_orcids": ["0000-0002-1825-0097", "0000-0002-1111-1115"],
     }
 
     result = Evaluator({"expected_output": expected}, predicted).creators_eval()

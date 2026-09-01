@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from langfuse.api import NotFoundError
+
 
 def _expected_output_from_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
     """Map dataset metadata to the expected output schema."""
@@ -25,7 +27,7 @@ def _expected_output_from_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def load_local_dataset(dataset_root: Path, dataset_name) -> list[dict[str, Any]]:
+def load_local_dataset(dataset_root: Path, dataset_name: str) -> list[dict[str, Any]]:
     """Load dataset items from local metadata files."""
     items = []
     metadata_dir = dataset_root / "metadata"
@@ -75,18 +77,22 @@ def get_or_create_langfuse_dataset(
         langfuse_dataset_items = list(langfuse_dataset.items)
         if langfuse_dataset_items:
             return langfuse_dataset_items
-    except Exception:
-        pass
-    # Populate dataset if it doesn't exist yet in Languse
+    except NotFoundError:
+        pass  # expected on first run, it will be created below
+    except Exception as e:
+        print(f"ERROR GETTING LANGFUSE DATASET: {e!r}")
+        raise
+
+    # Populate dataset if it doesn't exist yet in Langfuse
     dataset = langfuse.create_dataset(
         name=dataset_name, description="Evaluation Dataset"
     )
     for item in dataset_items:
-        item_id = item.get("id") or item["input"].get("record_id")  # HERE
+        item_id = item.get("id") or item["input"].get("record_id")
 
         langfuse.create_dataset_item(
             dataset_name=dataset_name,
-            id=item_id,  # HERE
+            id=item_id,
             input=item["input"],
             expected_output=item["expected_output"],
         )

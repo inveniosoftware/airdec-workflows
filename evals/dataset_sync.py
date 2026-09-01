@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2026 CERN.
 # SPDX-License-Identifier: MIT
-
 """Fetch the published dataset and overlay newer GitHub objects."""
 
 from __future__ import annotations

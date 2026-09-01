@@ -6,48 +6,41 @@
 import argparse
 import asyncio
 import os
-from io import BytesIO
 from pathlib import Path
 
-import pdfplumber
 from dataset import (
     get_or_create_langfuse_dataset,
     load_local_dataset,
 )
+from dataset_sync import sync_dataset
 from evaluators import (
     average_score_evaluator,
     build_comparison_payload,
     item_summary_evaluator,
 )
-from extractors import get_extractor
 from langfuse import get_client
-from models import MetadataResult, create_model
 from prompts import sync_extraction_prompt
-from pydantic_ai import Agent
 
-DATASET_ROOT = Path("full-dataset")
-DATASET_NAME = "results-with-all-tools"
-EXPERIMENT_NAME = "results-with-all-tools"
+from app.activities.extract_metadata import extract_metadata_record
+from app.config import get_settings
+from app.extractors import get_extractor
+
+DATASET_NAME = "orcha-eval-dataset"
+DEFAULT_EXPERIMENT_NAME = "dataset"
+MAX_CONCURRENT_REQUESTS = 4
+RETRYABLE_HTTP_STATUS_CODES = {429, 500, 502, 503, 504}
 
 
-def extract_text(pdf_path: Path, extractor_name: str, pages: list[int] | None = None):
-    """Read a PDF file and extract text with the configured extractor.
-
-    If requested pages are out of range, filters to available pages only.
-    """
-    extractor = get_extractor(extractor_name)
-    pdf_bytes = pdf_path.read_bytes()
-
-    # If pages are specified, filter them
-    if pages:
-        with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
-            page_count = len(pdf.pages)
-            # Filter to pages that actually exist (1-based indexing)
-            valid_pages = [p for p in pages if 0 < p <= page_count]
-            if len(valid_pages) < len(pages):
-                # If some pages are invalid, use only the valid ones
-                return extractor.extract(pdf_bytes, pages=valid_pages)["full_text"]
-    return extractor.extract(pdf_bytes, pages=pages)["full_text"]
+async def _with_retry(call, *, retries: int = 3, base_delay: float = 1.0):
+    """Retry LLM calls that fail with transient HTTP errors."""
+    for attempt in range(retries):
+        try:
+            return await call()
+        except Exception as exc:
+            status_code = getattr(exc, "status_code", None)
+            if attempt == retries - 1 or status_code not in RETRYABLE_HTTP_STATUS_CODES:
+                raise
+            await asyncio.sleep(base_delay * (2**attempt))
 
 
 def save_extracted_text(text: str, record_id: str, dataset_root: Path) -> None:
@@ -59,43 +52,25 @@ def save_extracted_text(text: str, record_id: str, dataset_root: Path) -> None:
     output_path.write_text(text, encoding="utf-8")
 
 
-async def _run_agent(agent: Agent, document_text: str) -> MetadataResult:
-    """Run the extraction agent on document text."""
-    max_retries = 5
-    for attempt in range(max_retries):
-        try:
-            result = await agent.run(document_text)
-            return result.output
-        except Exception as exc:
-            error_str = str(exc)
-            is_retryable = (
-                "429" in error_str
-                or "500" in error_str
-                or "Connection error" in error_str
-            )
-            if is_retryable and attempt < max_retries - 1:
-                wait_time = 2**attempt
-                print(
-                    f"  Retry attempt {attempt + 1}/{max_retries - 1} "
-                    f"after {wait_time}s..."
-                )
-                await asyncio.sleep(wait_time)
-            else:
-                raise
-
-
-async def extraction_task(dataset_item, agent: Agent, extractor: str = "pdfplumber"):
+async def extraction_task(
+    dataset_item,
+    dataset_root: Path,
+    extractor_name: str = "pdfplumber",
+):
     """Extract text, run the agent, and build evaluator comparison data."""
     input_data = dataset_item.get("input")
     pdf_path = Path(input_data.get("pdf_path"))
     expected = dataset_item.get("expected_output")
+    record_id = input_data.get("record_id") or pdf_path.stem
 
-    # Extract text from pdf
-    text = extract_text(pdf_path, extractor, [1, 2])
+    extractor = get_extractor(extractor_name)
+    pdf_bytes = pdf_path.read_bytes()
+    text = extractor.extract(pdf_bytes, pages=[1, 2])["full_text"]
+    save_extracted_text(text, record_id, dataset_root)
 
-    # Run model
-    output = await _run_agent(agent, text)
-    output_dict = output.model_dump(mode="json")
+    # Reuse the app's metadata helper without going through Temporal.
+    metadata = await _with_retry(lambda: extract_metadata_record(text))
+    output_dict = metadata.model_dump(mode="json")
     output_dict["comparison"] = build_comparison_payload(output_dict, expected)
 
     return {
@@ -106,11 +81,11 @@ async def extraction_task(dataset_item, agent: Agent, extractor: str = "pdfplumb
 
 async def run(
     extractor: str = "pdfplumber",
-    prompt_name: str = "medium",
-    run_name: str | None = None,
+    prompt_name: str = "prompt",
 ):
     """Run extraction and evaluation experiment."""
-    items = load_local_dataset(DATASET_ROOT, DATASET_NAME)
+    dataset_root, provenance = sync_dataset(ref="main")
+    items = load_local_dataset(dataset_root, DATASET_NAME)
 
     client = get_client()
     prompt_ref = sync_extraction_prompt(client, prompt_name)
@@ -120,27 +95,27 @@ async def run(
         DATASET_NAME,
         items,
     )
-
-    agent = Agent(
-        model=create_model(),
-        instructions=prompt_ref["text"],
-        output_type=MetadataResult,
-    )
+    settings = get_settings()
 
     async def task(item):
         return await extraction_task(
-            dataset_item={"input": item.input, "expected_output": item.expected_output},
-            agent=agent,
-            extractor=extractor,
+            dataset_item={
+                "input": item.input,
+                "expected_output": item.expected_output,
+            },
+            dataset_root=dataset_root,
+            extractor_name=extractor,
         )
 
+    effective_run_name = f"{extractor}__{settings.llm}"
+
     result = client.run_experiment(
-        name=run_name or EXPERIMENT_NAME,
+        name=effective_run_name,
         description="Extract and evaluate document metadata",
         data=dataset_items,
         metadata={
             "dataset_name": DATASET_NAME,
-            "model": os.getenv("LLM"),
+            "model": settings.llm,
             "extractor": extractor,
             "prompt_name": prompt_ref["name"],
             "prompt_version": str(prompt_ref.get("version")),
@@ -149,6 +124,7 @@ async def run(
         task=task,
         evaluators=[item_summary_evaluator],
         run_evaluators=[average_score_evaluator],
+        max_concurrency=MAX_CONCURRENT_REQUESTS,
     )
 
     print(result.format())
@@ -157,14 +133,12 @@ async def run(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run metadata extraction experiment.")
-    parser.add_argument(
-        "--model", default=os.getenv("LLM"), help="LLM model, e.g. litellm/gpt-4o"
-    )
+    parser.add_argument("--model", default=os.getenv("LLM"), help="LLM model")
     parser.add_argument(
         "--extractor", default="pdfplumber", help="PDF extractor (default: pdfplumber)"
     )
     parser.add_argument(
-        "--prompt", default="medium", help="Prompt name (default: medium)"
+        "--prompt", default="prompt", help="Prompt name (default: prompt)"
     )
     args = parser.parse_args()
 
