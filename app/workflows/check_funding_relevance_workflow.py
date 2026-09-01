@@ -6,6 +6,7 @@ from datetime import timedelta
 from temporalio import workflow
 
 from app.activities.check_funding_relevance import (
+    FUNDING_WORKFLOW_RETRY_POLICY,
     CheckFundingRelevanceRequest,
     CheckFundingRelevanceResponse,
     check_funding_relevance,
@@ -61,6 +62,7 @@ class CheckFundingRelevance:
                     context,
                 ],
                 start_to_close_timeout=timedelta(minutes=2),
+                retry_policy=FUNDING_WORKFLOW_RETRY_POLICY,
             )
         except Exception:
             await workflow.execute_activity(

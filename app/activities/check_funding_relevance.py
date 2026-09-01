@@ -3,13 +3,23 @@
 
 """LLM-based funding relevance check activity."""
 
+from datetime import timedelta
+
 from pydantic import BaseModel, Field
 from temporalio import activity
+from temporalio.common import RetryPolicy
 
 from app.activities._llm import build_agent
 from app.config import get_settings
 from app.observability import propagate_langfuse_context
 from app.workflows.specs import WorkflowContext
+
+FUNDING_WORKFLOW_RETRY_POLICY = RetryPolicy(
+    initial_interval=timedelta(seconds=5),
+    backoff_coefficient=2,
+    maximum_interval=timedelta(seconds=20),
+    maximum_attempts=3,
+)
 
 
 class CheckFundingRelevanceRequest(BaseModel):
